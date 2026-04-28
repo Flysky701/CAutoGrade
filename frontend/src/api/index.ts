@@ -1,0 +1,112 @@
+import api from './request';
+
+export const authApi = {
+  login: (data: { username: string; password: string }) =>
+    api.post<{ token: string; username: string; role: string }>('/auth/login', data),
+  register: (data: { username: string; password: string; nickname: string; role: string }) =>
+    api.post<{ token: string; username: string; role: string }>('/auth/register', data),
+};
+
+export const userApi = {
+  getProfile: () => api.get('/users/profile'),
+  updateProfile: (data: { nickname?: string; avatar?: string }) =>
+    api.put('/users/profile', data),
+  changePassword: (data: { oldPassword: string; newPassword: string }) =>
+    api.post('/users/password', data),
+  getAllUsers: () => api.get('/users'),
+  getUsersByRole: (role: string) => api.get(`/users/role/${role}`),
+  disableUser: (id: number) => api.post(`/users/${id}/disable`),
+  enableUser: (id: number) => api.post(`/users/${id}/enable`),
+  resetPassword: (id: number, newPassword: string) =>
+    api.post(`/users/${id}/reset-password?newPassword=${newPassword}`),
+};
+
+export const courseApi = {
+  getAll: () => api.get('/courses'),
+  getById: (id: number) => api.get(`/courses/${id}`),
+  getMyCourses: () => api.get('/courses/teacher'),
+  create: (data: any) => api.post('/courses', data),
+  update: (id: number, data: any) => api.put(`/courses/${id}`, data),
+  delete: (id: number) => api.delete(`/courses/${id}`),
+};
+
+export const classApi = {
+  getByCourse: (courseId: number) => api.get(`/classes/course/${courseId}`),
+  getMyClasses: () => api.get('/classes/teacher'),
+  getMyClassesAsStudent: () => api.get('/classes/student'),
+  create: (data: any) => api.post('/classes', data),
+  join: (inviteCode: string) => api.post(`/classes/join?inviteCode=${inviteCode}`),
+  getClassStudents: (classId: number) => api.get(`/classes/${classId}/students`),
+  addStudent: (classId: number, studentId: number) =>
+    api.post(`/classes/${classId}/students/${studentId}`),
+  removeStudent: (classId: number, studentId: number) =>
+    api.delete(`/classes/${classId}/students/${studentId}`),
+};
+
+export const assignmentApi = {
+  getByCourse: (courseId: number) => api.get(`/assignments/course/${courseId}`),
+  getMyAssignments: () => api.get('/assignments/teacher'),
+  getById: (id: number) => api.get(`/assignments/${id}`),
+  getProblems: (id: number) => api.get(`/assignments/${id}/problems`),
+  create: (data: any) => api.post('/assignments', data),
+  update: (id: number, data: any) => api.put(`/assignments/${id}`, data),
+  publish: (id: number) => api.post(`/assignments/${id}/publish`),
+  delete: (id: number) => api.delete(`/assignments/${id}`),
+};
+
+export const problemApi = {
+  getMyProblems: () => api.get('/problems'),
+  getPublic: () => api.get('/problems/public'),
+  getById: (id: number) => api.get(`/problems/${id}`),
+  create: (data: any) => api.post('/problems', data),
+  update: (id: number, data: any) => api.put(`/problems/${id}`, data),
+  delete: (id: number) => api.delete(`/problems/${id}`),
+};
+
+export const testCaseApi = {
+  getByProblem: (problemId: number) => api.get(`/test-cases/problem/${problemId}`),
+  getVisible: (problemId: number) => api.get(`/test-cases/problem/${problemId}/visible`),
+  create: (data: any) => api.post('/test-cases', data),
+  update: (id: number, data: any) => api.put(`/test-cases/${id}`, data),
+  delete: (id: number) => api.delete(`/test-cases/${id}`),
+};
+
+export const submissionApi = {
+  submit: (data: { assignmentId: number; problemId: number; code: string }) =>
+    api.post('/submissions', data),
+  getById: (id: number) => api.get(`/submissions/${id}`),
+  getGradingResult: (id: number) => api.get(`/submissions/${id}/grading`),
+  getMySubmissions: () => api.get('/submissions/student'),
+  getByAssignment: (assignmentId: number) => api.get(`/submissions/assignment/${assignmentId}`),
+};
+
+export const notificationApi = {
+  getMy: () => api.get('/notifications'),
+  getUnread: () => api.get('/notifications/unread'),
+  getUnreadCount: () => api.get('/notifications/unread/count'),
+  markAsRead: (id: number) => api.post(`/notifications/${id}/read`),
+  markAllAsRead: () => api.post('/notifications/read-all'),
+};
+
+export const announcementApi = {
+  getByCourse: (courseId: number) => api.get(`/announcements/course/${courseId}`),
+  getById: (id: number) => api.get(`/announcements/${id}`),
+  create: (data: any) => api.post('/announcements', data),
+  update: (id: number, data: any) => api.put(`/announcements/${id}`, data),
+  delete: (id: number) => api.delete(`/announcements/${id}`),
+};
+
+export const analyticsApi = {
+  getClassAnalytics: (classId: number) => api.get(`/analytics/class/${classId}`),
+  getStudentAnalytics: (studentId: number) => api.get(`/analytics/student/${studentId}`),
+  getAssignmentAnalytics: (assignmentId: number) => api.get(`/analytics/assignment/${assignmentId}`),
+  getProblemAnalytics: (problemId: number) => api.get(`/analytics/problem/${problemId}`),
+};
+
+export const gradingApi = {
+  getPending: () => api.get('/gradings/pending'),
+  getByAssignment: (assignmentId: number) => api.get(`/gradings/assignment/${assignmentId}`),
+  getUnreviewed: () => api.get('/gradings/unreviewed'),
+  review: (id: number, adjustedScore: number, feedback?: string) =>
+    api.put(`/submissions/grading/${id}/review?adjustedScore=${adjustedScore}&feedback=${feedback || ''}`),
+};

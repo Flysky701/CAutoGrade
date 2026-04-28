@@ -1,0 +1,13 @@
+redis:
+  url: redis://localhost:6379/1
+
+llm:
+  provider: deepseek
+  base_url: https://api.deepseek.com/v1
+  model: deepseek-chat
+  timeout: 30
+
+runtime:
+  compile_timeout_seconds: 5
+  run_timeout_seconds: 5
+  memory_limit_mb: 256

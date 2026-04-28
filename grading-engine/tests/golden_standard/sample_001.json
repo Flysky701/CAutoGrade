@@ -1,0 +1,17 @@
+{
+  "submission_id": 1,
+  "problem_title": "计算两数之和",
+  "problem_description": "编写程序，读取两个整数，输出它们的和。输入：两个整数，空格分隔。输出：一个整数表示和。",
+  "code": "#include <stdio.h>\n\nint main() {\n    int a, b;\n    scanf(\"%d %d\", &a, &b);\n    printf(\"%d\\n\", a + b);\n    return 0;\n}",
+  "golden_score": 95,
+  "golden_correctness_score": 58,
+  "golden_style_score": 18,
+  "golden_efficiency_score": 19,
+  "threshold": 15,
+  "annotations": [
+    {"line": 1, "severity": "info", "message": "正确包含了标准输入输出头文件"},
+    {"line": 4, "severity": "info", "message": "正确使用scanf读取输入，参数前有取地址符"},
+    {"line": 6, "severity": "info", "message": "正确使用return 0表示程序正常结束"}
+  ],
+  "tags": ["输入输出", "基本运算", "变量"]
+}

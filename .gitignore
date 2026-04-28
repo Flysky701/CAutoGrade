@@ -1,0 +1,34 @@
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+
+# Java / Maven
+backend/target/
+backend/*.jar
+backend/*.war
+
+# Node / Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Python
+grading-engine/__pycache__/
+grading-engine/*.pyc
+grading-engine/venv/
+grading-engine/.venv/
+
+# Docker
+docker/mysql/data/
+docker/redis/data/
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/

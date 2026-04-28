@@ -1,0 +1,92 @@
+[
+  {
+    "id": "kp_variable",
+    "content": "变量与数据类型：C语言基本数据类型（int、float、double、char）的声明、初始化和使用，变量作用域（全局/局部/静态），常量定义（#define、const），类型转换规则（隐式转换和强制转换）。",
+    "tags": ["变量", "数据类型", "作用域", "常量", "类型转换"],
+    "difficulty": 1
+  },
+  {
+    "id": "kp_io",
+    "content": "输入输出：scanf和printf的格式化输入输出，常用格式说明符（%d、%f、%lf、%c、%s），getchar/putchar字符输入输出，文件读写（fopen/fclose/fscanf/fprintf）。",
+    "tags": ["输入输出", "scanf", "printf", "文件操作"],
+    "difficulty": 1
+  },
+  {
+    "id": "kp_branch",
+    "content": "分支结构：if-else判断语句，switch多分支选择，条件运算符（?:），多重条件嵌套和逻辑运算符（&&、||、!）的使用。注意switch中break的必需性。",
+    "tags": ["分支", "if", "switch", "逻辑运算"],
+    "difficulty": 1
+  },
+  {
+    "id": "kp_loop",
+    "content": "循环结构：for循环的三要素（初始化、条件、增量），while和do-while循环，循环嵌套，break跳出循环和continue进入下一轮循环，循环控制变量的正确更新，避免死循环。",
+    "tags": ["循环", "for", "while", "break", "continue"],
+    "difficulty": 2
+  },
+  {
+    "id": "kp_array",
+    "content": "数组：一维数组和二维数组的声明、初始化和遍历，数组作为函数参数传递（退化为指针），字符数组与字符串，数组下标从0开始，注意区分sizeof(数组名)和sizeof(指针)。",
+    "tags": ["数组", "字符串", "sizeof", "遍历"],
+    "difficulty": 2
+  },
+  {
+    "id": "kp_pointer",
+    "content": "指针：指针变量的声明和初始化，取地址运算符&和解引用运算符*，指针算术运算，指针与数组的关系（数组名是常量指针），指针作为函数参数实现传址调用，二级指针和多级指针概念。",
+    "tags": ["指针", "地址", "解引用", "传址"],
+    "difficulty": 3
+  },
+  {
+    "id": "kp_function",
+    "content": "函数：函数声明、定义和调用，参数传递（值传递与指针传递），返回值类型和return语句，递归函数的设计（基准条件和递归条件），函数指针的基本概念。",
+    "tags": ["函数", "递归", "参数传递", "返回值"],
+    "difficulty": 2
+  },
+  {
+    "id": "kp_struct",
+    "content": "结构体与共用体：struct定义和成员访问（.与->运算符），typedef类型别名，结构体数组和嵌套结构体，共用体union的内存共享特性，枚举类型enum的使用。",
+    "tags": ["结构体", "typedef", "union", "enum"],
+    "difficulty": 3
+  },
+  {
+    "id": "kp_memory",
+    "content": "动态内存管理：malloc、calloc、realloc分配内存，free释放内存，sizeof计算所需空间，内存泄漏的常见场景（忘记free、提前return、异常跳转），realloc使用注意事项。",
+    "tags": ["malloc", "free", "realloc", "内存泄漏"],
+    "difficulty": 3
+  },
+  {
+    "id": "kp_linkedlist",
+    "content": "链表：单链表节点的定义和创建，链表的遍历、插入（头插/尾插/中间插入）、删除和查找操作，头结点的使用，链表反转，有序链表合并。",
+    "tags": ["链表", "节点", "插入", "删除", "反转"],
+    "difficulty": 3
+  },
+  {
+    "id": "kp_sort",
+    "content": "排序算法：冒泡排序、选择排序、插入排序（O(n²)简单排序），快速排序和归并排序（O(n log n)高级排序），排序的稳定性概念，比较函数的设计。",
+    "tags": ["排序", "冒泡", "选择", "快速排序", "归并排序"],
+    "difficulty": 3
+  },
+  {
+    "id": "kp_search",
+    "content": "查找算法：顺序查找（无序数组），二分查找（有序数组），二叉搜索树的查找、插入和删除，哈希查找的基本概念。",
+    "tags": ["查找", "二分", "顺序查找", "哈希"],
+    "difficulty": 3
+  },
+  {
+    "id": "kp_string",
+    "content": "字符串处理：string.h库函数（strlen、strcpy、strcmp、strcat、strstr），字符串的安全版本（strncpy、strncat），手动实现字符串操作函数，字符分类（isalpha、isdigit等）。",
+    "tags": ["字符串", "strlen", "strcpy", "strcmp"],
+    "difficulty": 2
+  },
+  {
+    "id": "kp_recursion",
+    "content": "递归算法设计：递归三要素（基准条件、递归条件、问题规模缩减），典型递归问题（阶乘、斐波那契、汉诺塔、全排列），递归与迭代的转换，递归的栈空间开销和尾递归优化。",
+    "tags": ["递归", "阶乘", "斐波那契", "汉诺塔"],
+    "difficulty": 3
+  },
+  {
+    "id": "kp_file",
+    "content": "文件操作：fopen打开文件（模式r/w/a/r+/w+/a+），fclose关闭文件，fscanf/fprintf格式化读写，fgets/fputs行读写，fread/fwrite二进制读写，文件指针定位（fseek/ftell/rewind），feof和ferror错误检测。",
+    "tags": ["文件", "fopen", "fclose", "fprintf", "fscanf"],
+    "difficulty": 2
+  }
+]
