@@ -58,6 +58,12 @@ public class AssignmentController {
         return Result.success(assignmentService.getAssignmentsByTeacher(teacherId));
     }
 
+    @GetMapping("/student")
+    public Result<List<Assignment>> getStudentAssignments() {
+        Long studentId = SecurityUtils.getCurrentUserId();
+        return Result.success(assignmentService.getAssignmentsByStudent(studentId));
+    }
+
     @GetMapping("/{id}")
     public Result<Assignment> getAssignmentById(@PathVariable Long id) {
         return Result.success(assignmentService.getAssignmentById(id));

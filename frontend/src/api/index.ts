@@ -59,6 +59,7 @@ export const classApi = {
 export const assignmentApi = {
   getByCourse: (courseId: number) => api.get(`/assignments/course/${courseId}`),
   getMyAssignments: () => api.get('/assignments/teacher'),
+  getStudentAssignments: () => api.get('/assignments/student'),
   getById: (id: number) => api.get(`/assignments/${id}`),
   getProblems: (id: number) => api.get(`/assignments/${id}/problems`),
   create: (data: any) => api.post('/assignments', data),

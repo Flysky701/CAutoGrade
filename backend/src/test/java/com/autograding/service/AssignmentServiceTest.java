@@ -3,9 +3,13 @@ package com.autograding.service;
 import com.autograding.common.BusinessException;
 import com.autograding.entity.Assignment;
 import com.autograding.entity.AssignmentProblem;
+import com.autograding.entity.Class;
+import com.autograding.entity.ClassStudent;
 import com.autograding.entity.Course;
 import com.autograding.mapper.AssignmentMapper;
 import com.autograding.mapper.AssignmentProblemMapper;
+import com.autograding.mapper.ClassMapper;
+import com.autograding.mapper.ClassStudentMapper;
 import com.autograding.mapper.CourseMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,6 +32,8 @@ class AssignmentServiceTest {
     @Mock private AssignmentMapper assignmentMapper;
     @Mock private AssignmentProblemMapper assignmentProblemMapper;
     @Mock private CourseMapper courseMapper;
+    @Mock private ClassMapper classMapper;
+    @Mock private ClassStudentMapper classStudentMapper;
 
     @InjectMocks
     private AssignmentService assignmentService;

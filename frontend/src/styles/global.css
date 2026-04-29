@@ -3,17 +3,26 @@
    ============================================================ */
 
 :root {
-  /* Brand colors */
-  --primary: #409eff;
-  --primary-light: #79bbff;
-  --primary-dark: #3375b9;
-  --success: #67c23a;
-  --success-light: #b3e19d;
-  --warning: #e6a23c;
-  --warning-light: #f3d19e;
-  --danger: #f56c6c;
-  --danger-light: #fab6b6;
-  --info: #909399;
+  /* Brand colors — academic navy palette */
+  --primary: #1e3a5f;
+  --primary-light: #2d5a8e;
+  --primary-dark: #0f2340;
+  --color-accent: #d97706;
+  --color-accent-light: #f59e0b;
+  --success: #059669;
+  --success-light: #a7f3d0;
+  --warning: #d97706;
+  --warning-light: #fde68a;
+  --danger: #dc2626;
+  --danger-light: #fecaca;
+  --info: #6b7280;
+
+  /* Semantic grading colors */
+  --grade-a: #059669;
+  --grade-b: #2563eb;
+  --grade-c: #d97706;
+  --grade-d: #ea580c;
+  --grade-f: #dc2626;
 
   /* Neutral palette */
   --text-primary: #1d1e1f;
@@ -32,6 +41,8 @@
 
   /* Typography */
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-display: 'Inter', 'SF Pro Display', 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
   --font-size-xs: 11px;
   --font-size-sm: 13px;
   --font-size-base: 14px;
@@ -77,7 +88,7 @@
 
   /* Transitions */
   --transition-fast: 150ms ease;
-  --transition-base: 240ms ease;
+  --transition-base: 250ms ease;
   --transition-slow: 360ms ease;
 
   /* Layout */
@@ -171,9 +182,19 @@ h4 { font-size: var(--font-size-lg); }
 }
 
 /* Score display colors */
-.score-high  { color: var(--success); }
-.score-mid   { color: var(--warning); }
-.score-low   { color: var(--danger); }
+.score-high  { color: var(--grade-a); }
+.score-mid   { color: var(--grade-c); }
+.score-low   { color: var(--grade-f); }
+
+/* Grade letter utilities */
+.grade-a { color: var(--grade-a); font-weight: 700; }
+.grade-b { color: var(--grade-b); font-weight: 700; }
+.grade-c { color: var(--grade-c); font-weight: 700; }
+.grade-d { color: var(--grade-d); font-weight: 700; }
+.grade-f { color: var(--grade-f); font-weight: 700; }
+
+/* Code font */
+.code-font { font-family: var(--font-mono); }
 
 /* ============================================================
    Card styles

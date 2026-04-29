@@ -20,6 +20,13 @@ frontend/dist/
 **/*.pyo
 grading-engine/venv/
 grading-engine/.venv/
+.pytest_cache/
+
+# ChromaDB / RAG generated data
+grading-engine/chroma_data/
+
+# IDE / AI tools
+.trae/
 
 # Docker
 docker/mysql/data/

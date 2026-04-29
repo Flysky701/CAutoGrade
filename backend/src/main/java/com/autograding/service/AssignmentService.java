@@ -3,9 +3,13 @@ package com.autograding.service;
 import com.autograding.common.BusinessException;
 import com.autograding.entity.Assignment;
 import com.autograding.entity.AssignmentProblem;
+import com.autograding.entity.Class;
+import com.autograding.entity.ClassStudent;
 import com.autograding.entity.Course;
 import com.autograding.mapper.AssignmentMapper;
 import com.autograding.mapper.AssignmentProblemMapper;
+import com.autograding.mapper.ClassMapper;
+import com.autograding.mapper.ClassStudentMapper;
 import com.autograding.mapper.CourseMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
@@ -21,13 +25,19 @@ public class AssignmentService {
     private final AssignmentMapper assignmentMapper;
     private final AssignmentProblemMapper assignmentProblemMapper;
     private final CourseMapper courseMapper;
+    private final ClassMapper classMapper;
+    private final ClassStudentMapper classStudentMapper;
 
     public AssignmentService(AssignmentMapper assignmentMapper,
                             AssignmentProblemMapper assignmentProblemMapper,
-                            CourseMapper courseMapper) {
+                            CourseMapper courseMapper,
+                            ClassMapper classMapper,
+                            ClassStudentMapper classStudentMapper) {
         this.assignmentMapper = assignmentMapper;
         this.assignmentProblemMapper = assignmentProblemMapper;
         this.courseMapper = courseMapper;
+        this.classMapper = classMapper;
+        this.classStudentMapper = classStudentMapper;
     }
 
     @Transactional
@@ -80,6 +90,34 @@ public class AssignmentService {
 
         LambdaQueryWrapper<Assignment> wrapper = new LambdaQueryWrapper<>();
         wrapper.in(Assignment::getCourseId, courseIds)
+               .eq(Assignment::getDeleted, 0)
+               .orderByDesc(Assignment::getEndTime);
+        return assignmentMapper.selectList(wrapper);
+    }
+
+    public List<Assignment> getAssignmentsByStudent(Long studentId) {
+        // 1. Find all classes the student belongs to
+        LambdaQueryWrapper<ClassStudent> csWrapper = new LambdaQueryWrapper<>();
+        csWrapper.eq(ClassStudent::getStudentId, studentId);
+        List<Long> classIds = classStudentMapper.selectList(csWrapper)
+                .stream().map(ClassStudent::getClassId).toList();
+        if (classIds.isEmpty()) {
+            return List.of();
+        }
+
+        // 2. Find courses for those classes
+        LambdaQueryWrapper<Class> classWrapper = new LambdaQueryWrapper<>();
+        classWrapper.in(Class::getId, classIds);
+        List<Long> courseIds = classMapper.selectList(classWrapper)
+                .stream().map(Class::getCourseId).distinct().toList();
+        if (courseIds.isEmpty()) {
+            return List.of();
+        }
+
+        // 3. Find published assignments for those courses
+        LambdaQueryWrapper<Assignment> wrapper = new LambdaQueryWrapper<>();
+        wrapper.in(Assignment::getCourseId, courseIds)
+               .eq(Assignment::getStatus, Assignment.Status.PUBLISHED)
                .eq(Assignment::getDeleted, 0)
                .orderByDesc(Assignment::getEndTime);
         return assignmentMapper.selectList(wrapper);

@@ -27,3 +27,17 @@ export function statusTag(status: string) {
 export function difficultyStars(level: number): string {
   return '★'.repeat(level) + '☆'.repeat(5 - level)
 }
+
+export function computeGrade(score: number): { letter: string; color: string } {
+  if (score >= 90) return { letter: 'A', color: 'var(--grade-a)' }
+  if (score >= 80) return { letter: 'B', color: 'var(--grade-b)' }
+  if (score >= 70) return { letter: 'C', color: 'var(--grade-c)' }
+  if (score >= 60) return { letter: 'D', color: 'var(--grade-d)' }
+  return { letter: 'F', color: 'var(--grade-f)' }
+}
+
+export function greetingByTime(name: string): string {
+  const h = new Date().getHours()
+  const prefix = h < 6 ? '夜深了' : h < 12 ? '早上好' : h < 18 ? '下午好' : '晚上好'
+  return `${prefix}，${name}`
+}
