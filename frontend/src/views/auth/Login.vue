@@ -18,9 +18,14 @@ const handleLogin = async () => {
   loading.value = true
   try {
     const res = await authApi.login(loginForm.value)
-    const data = res.data || res
-    let role = data.role || ''
+    // 后端返回 Result<T> = { code, msg, data }，axios 拦截器已取 response.data
+    // 所以 res = { code, msg, data: { token, username, role } }
+    const data = res?.data || res
+    let role = data?.role || ''
     if (role.startsWith('ROLE_')) role = role.substring(5)
+    if (!data?.token) {
+      throw new Error(data?.msg || res?.msg || '登录响应缺少 token')
+    }
     auth.setAuth(data.token, role, data.username)
     ElMessage.success('登录成功')
     const routeMap: Record<string, string> = {

@@ -8,7 +8,8 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
-    if (token) {
+    // Only add token if it's a valid non-placeholder value
+    if (token && token !== 'undefined' && token !== 'null' && token.length > 10) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
