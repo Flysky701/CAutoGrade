@@ -45,7 +45,7 @@ public class OperationLog {
     @Column(name = "target_id")
     private Long targetId;
 
-    @Column(columnDefinition = "JSON")
+    @Column(columnDefinition = "TEXT")
     private String detail;
 
     @Column(name = "ip_address", length = 50)

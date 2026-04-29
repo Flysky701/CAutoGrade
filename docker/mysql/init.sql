@@ -198,6 +198,24 @@ CREATE TABLE `notification` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='通知消息表';
 
 -- ==========================================================
+-- 公告表 (Announcement)
+-- ==========================================================
+CREATE TABLE `announcement` (
+  `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+  `course_id` BIGINT NOT NULL COMMENT '关联课程',
+  `publisher_id` BIGINT NOT NULL COMMENT '发布者',
+  `title` VARCHAR(100) NOT NULL,
+  `content` TEXT,
+  `is_pinned` TINYINT(1) DEFAULT 0,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `deleted` TINYINT(1) DEFAULT 0,
+  INDEX `idx_course` (`course_id`),
+  INDEX `idx_publisher` (`publisher_id`),
+  CONSTRAINT `fk_ann_course` FOREIGN KEY (`course_id`) REFERENCES `course` (`id`),
+  CONSTRAINT `fk_ann_publisher` FOREIGN KEY (`publisher_id`) REFERENCES `user` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='公告表';
+
+-- ==========================================================
 -- 操作日志表 (Operation_Log)
 -- ==========================================================
 CREATE TABLE `operation_log` (
@@ -206,7 +224,7 @@ CREATE TABLE `operation_log` (
   `action` VARCHAR(50) COMMENT '操作类型',
   `target_type` VARCHAR(50) COMMENT '目标类型',
   `target_id` BIGINT COMMENT '目标ID',
-  `detail` JSON COMMENT '操作详情',
+  `detail` TEXT COMMENT '操作详情',
   `ip_address` VARCHAR(50) COMMENT 'IP地址',
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
   INDEX `idx_user` (`user_id`),
@@ -218,7 +236,7 @@ CREATE TABLE `operation_log` (
 -- 插入系统默认初始数据
 -- ==========================================================
 -- 插入默认用户 (密码均为 123456)
-INSERT INTO `user` (`username`, `password_hash`, `nickname`, `role`) VALUES
-  ('admin',   '$2a$10$rksYpyhDhQWYv0hbD.fsNOOhynKOw/4TBFHb/NSgZsotML4DuRKdy', '系统管理员', 'ADMIN'),
-  ('teacher', '$2a$10$rksYpyhDhQWYv0hbD.fsNOOhynKOw/4TBFHb/NSgZsotML4DuRKdy', '张老师',     'TEACHER'),
-  ('student', '$2a$10$rksYpyhDhQWYv0hbD.fsNOOhynKOw/4TBFHb/NSgZsotML4DuRKdy', '小明',       'STUDENT');
+INSERT INTO `user` (`username`, `password_hash`, `code`, `nickname`, `role`) VALUES
+  ('admin',   '$2a$10$rksYpyhDhQWYv0hbD.fsNOOhynKOw/4TBFHb/NSgZsotML4DuRKdy', 'ADMIN001', '系统管理员', 'ADMIN'),
+  ('teacher', '$2a$10$rksYpyhDhQWYv0hbD.fsNOOhynKOw/4TBFHb/NSgZsotML4DuRKdy', 'T001',     '张老师',     'TEACHER'),
+  ('student', '$2a$10$rksYpyhDhQWYv0hbD.fsNOOhynKOw/4TBFHb/NSgZsotML4DuRKdy', 'S001',     '小明',       'STUDENT');
