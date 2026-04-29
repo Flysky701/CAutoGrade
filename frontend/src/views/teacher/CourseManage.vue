@@ -1,64 +1,106 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { ElMessage, ElTable, ElTableColumn, ElButton, ElDialog, ElForm, ElFormItem, ElInput } from 'element-plus';
-import { courseApi } from '../../api';
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { ElMessage, ElTable, ElTableColumn, ElButton, ElDialog, ElForm, ElFormItem, ElInput, ElTag, ElTooltip, ElAlert } from 'element-plus'
+import { CopyDocument } from '@element-plus/icons-vue'
+import { courseApi } from '@/api'
 
-const courses = ref<any[]>([]);
-const dialogVisible = ref(false);
-const form = ref({
-  name: '',
-  description: '',
-  semester: '',
-});
+const router = useRouter()
+const courses = ref<any[]>([])
+const dialogVisible = ref(false)
+const saving = ref(false)
+const form = ref({ name: '', description: '', semester: '' })
+const createdInviteCode = ref('')
 
 const loadCourses = async () => {
   try {
-    courses.value = (await courseApi.getMyCourses()).data || [];
-  } catch (e) {
-    console.error(e);
-  }
-};
+    courses.value = (await courseApi.getMyCourses()).data || []
+  } catch (e) { console.error(e) }
+}
 
 const handleCreate = async () => {
+  if (!form.value.name.trim()) { ElMessage.warning('请输入课程名称'); return }
+  saving.value = true
   try {
-    await courseApi.create(form.value);
-    ElMessage.success('创建成功');
-    dialogVisible.value = false;
-    loadCourses();
+    const res: any = await courseApi.create(form.value)
+    const course = res.data || res
+    createdInviteCode.value = course.inviteCode || ''
+    ElMessage.success('创建成功')
+    form.value = { name: '', description: '', semester: '' }
+    loadCourses()
   } catch (e: any) {
-    ElMessage.error(e.response?.data?.msg || '创建失败');
-  }
-};
+    ElMessage.error(e.response?.data?.msg || '创建失败')
+  } finally { saving.value = false }
+}
 
-onMounted(loadCourses);
+const copyCode = (code: string) => {
+  navigator.clipboard.writeText(code)
+  ElMessage.success('选课码已复制')
+}
+
+onMounted(loadCourses)
 </script>
 
 <template>
-  <div>
-    <h2>课程管理</h2>
-    <el-button type="primary" @click="dialogVisible = true">创建课程</el-button>
-    <el-table :data="courses" stripe style="margin-top: 20px">
-      <el-table-column prop="name" label="课程名称" />
-      <el-table-column prop="semester" label="学期" />
-      <el-table-column prop="status" label="状态" />
+  <div class="course-manage">
+    <div class="page-header">
+      <h2>课程管理</h2>
+      <el-button type="primary" @click="dialogVisible = true; createdInviteCode = ''">创建课程</el-button>
+    </div>
+
+    <el-table :data="courses" stripe>
+      <el-table-column prop="name" label="课程名称" min-width="160" />
+      <el-table-column prop="semester" label="学期" width="120" />
+      <el-table-column label="选课码" width="130">
+        <template #default="{ row }">
+          <template v-if="row.inviteCode">
+            <span class="invite-code">{{ row.inviteCode }}</span>
+            <el-tooltip content="复制选课码">
+              <el-button size="small" :icon="CopyDocument" circle @click="copyCode(row.inviteCode)" />
+            </el-tooltip>
+          </template>
+          <span v-else style="color:var(--text-placeholder)">—</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="状态" width="90">
+        <template #default="{ row }">
+          <el-tag :type="row.status === 'ACTIVE' ? 'success' : 'info'" size="small">
+            {{ row.status === 'ACTIVE' ? '活跃' : '已归档' }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" width="120">
+        <template #default="{ row }">
+          <el-button size="small" type="primary" plain @click="router.push(`/teacher/classes/${row.id}`)">
+            管理班级
+          </el-button>
+        </template>
+      </el-table-column>
     </el-table>
 
     <el-dialog v-model="dialogVisible" title="创建课程">
+      <el-alert v-if="createdInviteCode" type="success" :closable="false" show-icon style="margin-bottom:16px">
+        <template #title>选课码：<strong>{{ createdInviteCode }}</strong>（请复制保存）</template>
+      </el-alert>
       <el-form :model="form">
         <el-form-item label="课程名称">
-          <el-input v-model="form.name" />
+          <el-input v-model="form.name" placeholder="例如：C语言程序设计" />
         </el-form-item>
         <el-form-item label="课程描述">
-          <el-input v-model="form.description" type="textarea" />
+          <el-input v-model="form.description" type="textarea" :rows="3" placeholder="课程简介" />
         </el-form-item>
         <el-form-item label="学期">
-          <el-input v-model="form.semester" placeholder="如: 2026-Spring" />
+          <el-input v-model="form.semester" placeholder="如：2026-Spring" />
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleCreate">创建</el-button>
+        <el-button type="primary" :loading="saving" @click="handleCreate">创建</el-button>
       </template>
     </el-dialog>
   </div>
 </template>
+
+<style scoped>
+.invite-code { font-family: var(--font-mono); font-size: var(--font-size-sm); margin-right: var(--space-2); }
+</style>

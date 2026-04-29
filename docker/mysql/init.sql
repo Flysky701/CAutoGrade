@@ -28,6 +28,7 @@ CREATE TABLE `course` (
   `teacher_id` BIGINT NOT NULL COMMENT '授课教师ID',
   `semester` VARCHAR(20) COMMENT '学期，例如 2026-Spring',
   `cover_url` VARCHAR(255) COMMENT '课程封面图URL',
+  `invite_code` VARCHAR(20) UNIQUE COMMENT '课程邀请码',
   `status` ENUM('ACTIVE', 'ARCHIVED') DEFAULT 'ACTIVE' COMMENT '课程状态',
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -200,6 +201,6 @@ CREATE TABLE `notification` (
 -- ==========================================================
 -- 插入默认用户 (密码均为 123456)
 INSERT INTO `user` (`username`, `password_hash`, `nickname`, `role`) VALUES
-  ('admin',   '$2a$10$W2neF9.6Agi6kAKVq8q3fec5dHW8KUA.b0VSIGhLOMb/B15aY0.zG', '系统管理员', 'ADMIN'),
-  ('teacher', '$2a$10$.lJeBAuZgEOjwq39jiSNju8KXvOA/gP0sCg9UxySpaXUzD4bw5oSO', '张老师',     'TEACHER'),
-  ('student', '$2a$10$.lJeBAuZgEOjwq39jiSNju8KXvOA/gP0sCg9UxySpaXUzD4bw5oSO', '小明',       'STUDENT');
+  ('admin',   '$2a$10$rksYpyhDhQWYv0hbD.fsNOOhynKOw/4TBFHb/NSgZsotML4DuRKdy', '系统管理员', 'ADMIN'),
+  ('teacher', '$2a$10$rksYpyhDhQWYv0hbD.fsNOOhynKOw/4TBFHb/NSgZsotML4DuRKdy', '张老师',     'TEACHER'),
+  ('student', '$2a$10$rksYpyhDhQWYv0hbD.fsNOOhynKOw/4TBFHb/NSgZsotML4DuRKdy', '小明',       'STUDENT');

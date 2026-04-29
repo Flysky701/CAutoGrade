@@ -76,6 +76,11 @@
   font-family: var(--font-display);
 }
 
+/* Input text alignment — ensure left-start */
+.el-input__inner {
+  text-align: left !important;
+}
+
 /* Breadcrumb */
 .el-breadcrumb__inner {
   font-weight: 500;

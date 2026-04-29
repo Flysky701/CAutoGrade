@@ -38,6 +38,7 @@ public class CourseService {
         course.setTeacherId(teacherId);
         course.setSemester(request.getSemester());
         course.setCoverUrl(request.getCoverUrl());
+        course.setInviteCode(generateInviteCode());
         course.setStatus(Course.Status.ACTIVE);
         course.setCreatedAt(LocalDateTime.now());
         course.setUpdatedAt(LocalDateTime.now());
@@ -45,6 +46,16 @@ public class CourseService {
 
         course.setTeacher(teacher);
         return CourseResponse.fromEntity(course);
+    }
+
+    private String generateInviteCode() {
+        String chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        StringBuilder sb = new StringBuilder();
+        java.security.SecureRandom random = new java.security.SecureRandom();
+        for (int i = 0; i < 6; i++) {
+            sb.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        return sb.toString();
     }
 
     public List<CourseResponse> getCoursesByTeacher(Long teacherId) {

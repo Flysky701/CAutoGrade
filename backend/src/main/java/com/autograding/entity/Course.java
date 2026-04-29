@@ -63,6 +63,9 @@ public class Course {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    @Column(name = "invite_code", unique = true, length = 20)
+    private String inviteCode;
+
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 

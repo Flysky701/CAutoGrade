@@ -52,38 +52,28 @@ onMounted(async () => {
       </div>
     </div>
 
-    <el-row :gutter="16" class="stats-row">
-      <el-col :xs="12" :sm="4.8">
-        <div class="stat-card card-1" @click="router.push('/teacher/courses')">
-          <div class="stat-number">{{ stats.courses }}</div>
-          <div class="stat-label">活跃课程</div>
-        </div>
-      </el-col>
-      <el-col :xs="12" :sm="4.8">
-        <div class="stat-card card-2" @click="router.push('/teacher/assignments')">
-          <div class="stat-number">{{ stats.assignments }}</div>
-          <div class="stat-label">已发布作业</div>
-        </div>
-      </el-col>
-      <el-col :xs="12" :sm="4.8">
-        <div class="stat-card card-3" @click="router.push('/teacher/grading-review')">
-          <div class="stat-number">{{ stats.pendingReviews }}</div>
-          <div class="stat-label">待审核批阅</div>
-        </div>
-      </el-col>
-      <el-col :xs="12" :sm="4.8">
-        <div class="stat-card card-4">
-          <div class="stat-number">{{ stats.classes }}</div>
-          <div class="stat-label">班级总数</div>
-        </div>
-      </el-col>
-      <el-col :xs="12" :sm="4.8">
-        <div class="stat-card card-5">
-          <div class="stat-number">{{ stats.students }}</div>
-          <div class="stat-label">总学生数</div>
-        </div>
-      </el-col>
-    </el-row>
+    <div class="stats-row">
+      <div class="stat-card card-1" @click="router.push('/teacher/courses')">
+        <span class="stat-number">{{ stats.courses }}</span>
+        <span class="stat-label">课程</span>
+      </div>
+      <div class="stat-card card-2" @click="router.push('/teacher/assignments')">
+        <span class="stat-number">{{ stats.assignments }}</span>
+        <span class="stat-label">作业</span>
+      </div>
+      <div class="stat-card card-3" @click="router.push('/teacher/grading-review')">
+        <span class="stat-number">{{ stats.pendingReviews }}</span>
+        <span class="stat-label">待审核</span>
+      </div>
+      <div class="stat-card card-4">
+        <span class="stat-number">{{ stats.classes }}</span>
+        <span class="stat-label">班级</span>
+      </div>
+      <div class="stat-card card-5">
+        <span class="stat-number">{{ stats.students }}</span>
+        <span class="stat-label">学生</span>
+      </div>
+    </div>
 
     <el-row :gutter="16" class="content-row">
       <el-col :xs="24" :md="14">
@@ -135,24 +125,26 @@ onMounted(async () => {
 .teacher-dashboard { max-width: 100%; }
 .welcome-banner {
   background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 60%, var(--primary-light) 100%);
-  border-radius: var(--radius-xl); padding: var(--space-8); margin-bottom: var(--space-5); color: #fff;
+  border-radius: var(--radius-lg); padding: var(--space-5); margin-bottom: var(--space-4); color: #fff;
 }
-.welcome-banner h1 { color: #fff; font-size: var(--font-size-2xl); font-weight: 700; margin-bottom: var(--space-2); }
-.welcome-banner p { color: rgba(255,255,255,0.85); font-size: var(--font-size-md); }
-.stats-row { margin-bottom: var(--space-4); }
-.stat-card {
-  background: var(--bg-card); border-radius: var(--radius-lg); padding: var(--space-5);
-  text-align: center; box-shadow: var(--shadow-sm); border-left: 4px solid transparent;
-  cursor: pointer; transition: transform var(--transition-fast), box-shadow var(--transition-fast);
-}
-.stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
-.stat-card.card-1 { border-left-color: var(--primary); }
-.stat-card.card-2 { border-left-color: var(--grade-b); }
-.stat-card.card-3 { border-left-color: var(--color-accent); }
-.stat-card.card-4 { border-left-color: var(--grade-a); }
-.stat-card.card-5 { border-left-color: #7c3aed; }
-.stat-number { font-size: var(--font-size-3xl); font-weight: 700; color: var(--text-primary); font-family: var(--font-display); }
-.stat-label { font-size: var(--font-size-sm); color: var(--text-secondary); margin-top: var(--space-1); }
+.welcome-banner h1 { color: #fff; font-size: var(--font-size-lg); font-weight: 700; margin-bottom: var(--space-1); }
+.welcome-banner p { color: rgba(255,255,255,0.80); font-size: var(--font-size-sm); }
+	.stats-row { display: flex; gap: var(--space-3); margin-bottom: var(--space-4); flex-wrap: wrap; }
+	.stat-card {
+	  flex: 1; min-width: 100px;
+	  background: var(--bg-card); border-radius: var(--radius-lg); padding: var(--space-3) var(--space-4);
+	  display: flex; align-items: center; gap: var(--space-3);
+	  box-shadow: var(--shadow-sm); border-left: 3px solid transparent;
+	  cursor: pointer; transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+	}
+	.stat-card:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+	.stat-card.card-1 { border-left-color: var(--primary); }
+	.stat-card.card-2 { border-left-color: var(--grade-b); }
+	.stat-card.card-3 { border-left-color: var(--color-accent); }
+	.stat-card.card-4 { border-left-color: var(--grade-a); }
+	.stat-card.card-5 { border-left-color: #7c3aed; }
+	.stat-number { font-size: var(--font-size-xl); font-weight: 700; color: var(--text-primary); }
+	.stat-label { font-size: var(--font-size-xs); color: var(--text-secondary); }
 .content-row { margin-bottom: var(--space-4); }
 .section-card { height: 100%; }
 .card-header { display: flex; justify-content: space-between; align-items: center; }

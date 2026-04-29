@@ -7,6 +7,8 @@ import com.autograding.mapper.ProblemMapper;
 import com.autograding.mapper.UserMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -17,6 +19,7 @@ public class ProblemService {
 
     private final ProblemMapper problemMapper;
     private final UserMapper userMapper;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public ProblemService(ProblemMapper problemMapper, UserMapper userMapper) {
         this.problemMapper = problemMapper;
@@ -29,11 +32,35 @@ public class ProblemService {
             throw new BusinessException("无效的创建者ID");
         }
 
+        normalizeKnowledgeTags(problem);
         problem.setCreatorId(creatorId);
         problem.setCreatedAt(LocalDateTime.now());
         problem.setUpdatedAt(LocalDateTime.now());
         problemMapper.insert(problem);
         return problem;
+    }
+
+    private void normalizeKnowledgeTags(Problem problem) {
+        String tags = problem.getKnowledgeTags();
+        if (tags == null || tags.isEmpty()) {
+            problem.setKnowledgeTags("[]");
+            return;
+        }
+        // If already a JSON array string, keep it as-is
+        String trimmed = tags.trim();
+        if (trimmed.startsWith("[")) return;
+        // Comma-separated plain text → JSON array
+        try {
+            String[] parts = trimmed.split("[,，]");
+            List<String> list = new java.util.ArrayList<>();
+            for (String p : parts) {
+                String t = p.trim();
+                if (!t.isEmpty()) list.add(t);
+            }
+            problem.setKnowledgeTags(objectMapper.writeValueAsString(list));
+        } catch (JsonProcessingException e) {
+            problem.setKnowledgeTags("[]");
+        }
     }
 
     public List<Problem> getProblemsByCreator(Long creatorId) {
@@ -69,6 +96,7 @@ public class ProblemService {
             throw new BusinessException("无权限修改此题目");
         }
 
+        normalizeKnowledgeTags(request);
         LambdaUpdateWrapper<Problem> wrapper = new LambdaUpdateWrapper<Problem>()
                 .eq(Problem::getId, id)
                 .set(request.getTitle() != null, Problem::getTitle, request.getTitle())

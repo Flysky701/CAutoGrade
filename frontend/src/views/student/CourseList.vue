@@ -39,9 +39,7 @@ onMounted(loadCourses)
 
     <el-card shadow="hover" class="join-card">
       <div class="join-row">
-        <el-input v-model="joinCode" placeholder="输入选课码加入课程" class="join-input" size="large">
-          <template #prefix>选课码</template>
-        </el-input>
+        <el-input v-model="joinCode" placeholder="输入选课码加入课程" class="join-input" size="large" />
         <el-button type="primary" :loading="loading" size="large" @click="handleJoin">加入课程</el-button>
       </div>
     </el-card>

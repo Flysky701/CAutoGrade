@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { ElMessage, ElMessageBox, ElTable, ElTableColumn, ElButton, ElDialog, ElForm, ElFormItem, ElInput, ElInputNumber, ElSelect, ElOption, ElDatePicker, ElTag, ElSteps, ElStep, ElPopconfirm } from 'element-plus'
+import { useRouter } from 'vue-router'
+import { ElMessage, ElAlert, ElTable, ElTableColumn, ElButton, ElDialog, ElForm, ElFormItem, ElInput, ElInputNumber, ElSelect, ElOption, ElDatePicker, ElTag, ElSteps, ElStep, ElPopconfirm } from 'element-plus'
 import { assignmentApi, problemApi, courseApi, classApi } from '@/api'
 
+const router = useRouter()
 const assignments = ref<any[]>([])
 const courses = ref<any[]>([])
 const problems = ref<any[]>([])
@@ -76,7 +78,7 @@ const openEdit = (row: any) => {
 
 const canSave = computed(() => {
   const f = form.value
-  return f.title.trim() && f.courseId && f.startTime && f.endTime && f.problemIds.length > 0
+  return !!(f.title.trim() && f.courseId && f.startTime && f.endTime && f.problemIds.length > 0)
 })
 
 const handleSave = async () => {
@@ -256,7 +258,12 @@ onMounted(() => { loadAssignments(); loadMeta() })
 
       <!-- Step 3: 指定班级 -->
       <div v-show="dialogStep === 2">
-        <p style="margin-bottom:12px;color:#909399">已选 {{ form.classIds.length }} 个班级</p>
+        <el-alert v-if="classes.length === 0" type="warning" show-icon :closable="false" style="margin-bottom:12px">
+          <template #title>
+            暂无班级，请先在<a href="#" @click.prevent="router.push('/teacher/courses')" style="color:var(--primary)">课程管理</a>中为课程创建班级
+          </template>
+        </el-alert>
+        <p v-else style="margin-bottom:12px;color:#909399">已选 {{ form.classIds.length }} 个班级</p>
         <el-table :data="classes" stripe max-height="360">
           <el-table-column type="selection" width="50" />
           <el-table-column prop="name" label="班级名称" />

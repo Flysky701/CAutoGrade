@@ -14,6 +14,7 @@ public class CourseResponse {
     private String teacherName;
     private String semester;
     private String coverUrl;
+    private String inviteCode;
     private Course.Status status;
     private LocalDateTime createdAt;
 
@@ -25,6 +26,7 @@ public class CourseResponse {
         response.setTeacherId(course.getTeacherId());
         response.setSemester(course.getSemester());
         response.setCoverUrl(course.getCoverUrl());
+        response.setInviteCode(course.getInviteCode());
         response.setStatus(course.getStatus());
         response.setCreatedAt(course.getCreatedAt());
         if (course.getTeacher() != null) {

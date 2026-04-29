@@ -1,5 +1,6 @@
 package com.autograding.common;
 
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -18,6 +19,12 @@ public class GlobalExceptionHandler {
                 ? "参数校验失败"
                 : e.getBindingResult().getFieldErrors().get(0).getDefaultMessage();
         return Result.error(errorMessage);
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public Result<?> handleAuthenticationException(AuthenticationException e) {
+        log.warn("Authentication failed: {}", e.getMessage());
+        return Result.error("用户名或密码错误");
     }
 
     @ExceptionHandler(BusinessException.class)

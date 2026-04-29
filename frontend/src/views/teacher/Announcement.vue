@@ -9,7 +9,7 @@ const loading = ref(false)
 
 const showDialog = ref(false)
 const editingId = ref<number | null>(null)
-const form = ref({ title: '', content: '', courseId: null as number | null, pinned: false })
+const form = ref({ title: '', content: '', courseId: null as number | null, isPinned: false })
 const saving = ref(false)
 
 const loadAnnouncements = async () => {
@@ -19,7 +19,7 @@ const loadAnnouncements = async () => {
       courses.value.map((c: any) => announcementApi.getByCourse(c.id).then((r: any) => (r.data || []).map((a: any) => ({ ...a, courseName: c.name }))))
     )
     announcements.value = results.flat().sort((a: any, b: any) => {
-      if (a.pinned !== b.pinned) return b.pinned ? 1 : -1
+      if (a.isPinned !== b.isPinned) return b.isPinned ? 1 : -1
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     })
   } catch {
@@ -32,18 +32,20 @@ const loadAnnouncements = async () => {
 const loadCourses = async () => {
   try {
     courses.value = (await courseApi.getMyCourses() as any).data || []
-  } catch { /* silently fail */ }
+  } catch {
+    ElMessage.error('加载课程失败')
+  }
 }
 
 const openCreate = () => {
   editingId.value = null
-  form.value = { title: '', content: '', courseId: courses.value[0]?.id || null, pinned: false }
+  form.value = { title: '', content: '', courseId: courses.value[0]?.id || null, isPinned: false }
   showDialog.value = true
 }
 
 const openEdit = (row: any) => {
   editingId.value = row.id
-  form.value = { title: row.title, content: row.content, courseId: row.courseId, pinned: row.pinned }
+  form.value = { title: row.title, content: row.content, courseId: row.courseId, isPinned: row.isPinned == 1 }
   showDialog.value = true
 }
 
@@ -54,16 +56,26 @@ const handleSave = async () => {
   }
   saving.value = true
   try {
-    const data = { ...form.value }
+    const data = {
+      title: form.value.title,
+      content: form.value.content,
+      courseId: form.value.courseId,
+      isPinned: form.value.isPinned ? 1 : 0,
+    }
     if (editingId.value) {
       await announcementApi.update(editingId.value, data)
       ElMessage.success('更新成功')
     } else {
-      await announcementApi.create(data)
+      const res: any = await announcementApi.create(data)
+      const created = res?.data || res
+      announcements.value.unshift({
+        ...data, id: created?.id,
+        courseName: courses.value.find((c: any) => c.id === data.courseId)?.name || '',
+        createdAt: new Date().toISOString(),
+      })
       ElMessage.success('发布成功')
     }
     showDialog.value = false
-    loadAnnouncements()
   } catch (e: any) {
     ElMessage.error(e.response?.data?.msg || '保存失败')
   } finally {
@@ -75,6 +87,7 @@ const handleDelete = async (id: number) => {
   try {
     await announcementApi.delete(id)
     ElMessage.success('已删除')
+    await loadCourses()
     loadAnnouncements()
   } catch {
     ElMessage.error('删除失败')
@@ -83,9 +96,10 @@ const handleDelete = async (id: number) => {
 
 const handlePin = async (row: any) => {
   try {
-    await announcementApi.update(row.id, { pinned: !row.pinned })
-    row.pinned = !row.pinned
-    ElMessage.success(row.pinned ? '已置顶' : '已取消置顶')
+    const newVal = row.isPinned ? 0 : 1
+    await announcementApi.update(row.id, { isPinned: newVal })
+    row.isPinned = newVal
+    ElMessage.success(newVal ? '已置顶' : '已取消置顶')
     loadAnnouncements()
   } catch {
     ElMessage.error('操作失败')
@@ -109,7 +123,7 @@ onMounted(async () => {
       <el-table-column prop="title" label="标题" min-width="200">
         <template #default="{ row }">
           <div style="display:flex;align-items:center;gap:6px">
-            <el-tag v-if="row.pinned" type="danger" size="small">置顶</el-tag>
+            <el-tag v-if="row.isPinned" type="danger" size="small">置顶</el-tag>
             {{ row.title }}
           </div>
         </template>
@@ -124,7 +138,7 @@ onMounted(async () => {
         <template #default="{ row }">
           <el-button size="small" @click="openEdit(row)">编辑</el-button>
           <el-button size="small" @click="handlePin(row)">
-            {{ row.pinned ? '取消置顶' : '置顶' }}
+            {{ row.isPinned ? '取消置顶' : '置顶' }}
           </el-button>
           <el-popconfirm title="确认删除该公告？" @confirm="handleDelete(row.id)">
             <template #reference>
@@ -149,7 +163,7 @@ onMounted(async () => {
           <el-input v-model="form.content" type="textarea" :rows="6" placeholder="支持 Markdown 格式" />
         </el-form-item>
         <el-form-item label="置顶">
-          <el-switch v-model="form.pinned" />
+          <el-switch v-model="form.isPinned" />
         </el-form-item>
       </el-form>
       <template #footer>

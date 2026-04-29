@@ -54,10 +54,10 @@ const handleLogin = async () => {
       </div>
       <el-form :model="loginForm" @submit.prevent="handleLogin" label-position="top">
         <el-form-item label="用户名">
-          <el-input v-model="loginForm.username" placeholder="用户名 / 学号 / 工号" prefix-icon="User" size="large" />
+          <el-input v-model="loginForm.username" placeholder="用户名 / 学号 / 工号" size="large" />
         </el-form-item>
         <el-form-item label="密码">
-          <el-input v-model="loginForm.password" type="password" placeholder="密码" prefix-icon="Lock" show-password
+          <el-input v-model="loginForm.password" type="password" placeholder="密码" show-password
             size="large" @keyup.enter="handleLogin" />
         </el-form-item>
         <el-form-item>

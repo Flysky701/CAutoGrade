@@ -40,14 +40,24 @@ const openCreateProblem = () => {
   showProblemDialog.value = true
 }
 
+const parseTags = (tags: any): string => {
+  if (!tags) return ''
+  if (Array.isArray(tags)) return tags.join(', ')
+  if (typeof tags === 'string') {
+    try { const arr = JSON.parse(tags); if (Array.isArray(arr)) return arr.join(', ') } catch { /* plain string */ }
+    return tags
+  }
+  return ''
+}
+
 const openEditProblem = (row: any) => {
   editingProblemId.value = row.id
   problemForm.value = {
     title: row.title,
     description: row.description,
     difficulty: row.difficulty,
-    knowledgeTags: (row.knowledgeTags || []).join(', '),
-    isPublic: row.isPublic,
+    knowledgeTags: parseTags(row.knowledgeTags),
+    isPublic: row.isPublic == 1 || row.isPublic === true,
   }
   showProblemDialog.value = true
 }
@@ -59,9 +69,13 @@ const handleSaveProblem = async () => {
   }
   savingProblem.value = true
   try {
+    const tags = problemForm.value.knowledgeTags.split(/[,，]/).map((t: string) => t.trim()).filter(Boolean)
     const data = {
-      ...problemForm.value,
-      knowledgeTags: problemForm.value.knowledgeTags.split(/[,，]/).map((t: string) => t.trim()).filter(Boolean),
+      title: problemForm.value.title,
+      description: problemForm.value.description,
+      difficulty: problemForm.value.difficulty,
+      knowledgeTags: JSON.stringify(tags),
+      isPublic: problemForm.value.isPublic ? 1 : 0,
     }
     if (editingProblemId.value) {
       await problemApi.update(editingProblemId.value, data)
