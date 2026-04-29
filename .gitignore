@@ -2,13 +2,9 @@
 .idea/
 *.iml
 .vscode/
-*.swp
-*.swo
 
 # Java / Maven
 backend/target/
-backend/*.jar
-backend/*.war
 
 # Node / Frontend
 frontend/node_modules/
@@ -22,13 +18,10 @@ grading-engine/venv/
 grading-engine/.venv/
 .pytest_cache/
 
-# ChromaDB / RAG generated data
+# Grading engine generated data
 grading-engine/chroma_data/
 
-# IDE / AI tools
-.trae/
-
-# Docker
+# Docker volumes & env
 docker/mysql/data/
 docker/redis/data/
 .env
@@ -36,6 +29,12 @@ docker/redis/data/
 # OS
 .DS_Store
 Thumbs.db
+
+# AI assistant configs
+CLAUDE.md
+CODEBUDDY.md
+.claude/
+.github/
 
 # Logs
 *.log
