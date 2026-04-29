@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import {
-  Monitor, UserFilled, Setting, DocumentCopy, Expand, Fold
+  Monitor, UserFilled, Setting, DocumentCopy, Expand, Fold, Reading, School
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -16,6 +16,8 @@ const toggleSidebar = () => { sidebarCollapsed.value = !sidebarCollapsed.value }
 const breadcrumbMap: Record<string, string> = {
   '/admin/dashboard': '系统概览',
   '/admin/users': '用户管理',
+  '/admin/courses': '课程管理',
+  '/admin/classes': '班级管理',
   '/admin/config': '系统配置',
   '/admin/logs': '操作日志',
 }
@@ -54,6 +56,12 @@ const breadcrumbs = computed(() => {
           <el-menu-item-group title="管理">
             <el-menu-item index="/admin/users">
               <el-icon><UserFilled /></el-icon><span>用户管理</span>
+            </el-menu-item>
+            <el-menu-item index="/admin/courses">
+              <el-icon><Reading /></el-icon><span>课程管理</span>
+            </el-menu-item>
+            <el-menu-item index="/admin/classes">
+              <el-icon><School /></el-icon><span>班级管理</span>
             </el-menu-item>
             <el-menu-item index="/admin/config">
               <el-icon><Setting /></el-icon><span>系统配置</span>

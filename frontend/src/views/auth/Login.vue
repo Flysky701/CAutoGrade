@@ -29,7 +29,7 @@ const handleLogin = async () => {
     let role = inner.role || ''
     if (role.startsWith('ROLE_')) role = role.substring(5)
 
-    auth.setAuth(inner.token, role, inner.username)
+    auth.setAuth(inner.token, role, inner.username, inner.code)
     // 确保 localStorage 已写入后再跳转
     await new Promise(r => setTimeout(r, 0))
     const routeMap: Record<string, string> = {

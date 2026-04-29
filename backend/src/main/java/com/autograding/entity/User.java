@@ -37,6 +37,9 @@ public class User {
     @Column(nullable = false, unique = true, length = 50)
     private String username;
 
+    @Column(unique = true, length = 50)
+    private String code;
+
     @Column(name = "password_hash", nullable = false, length = 100)
     @TableField("password_hash")
     private String passwordHash;

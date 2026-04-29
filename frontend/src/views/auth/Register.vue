@@ -7,7 +7,7 @@ import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
 const auth = useAuthStore()
-const registerForm = ref({ username: '', password: '', passwordConfirm: '', nickname: '', role: 'STUDENT' })
+const registerForm = ref({ username: '', code: '', password: '', passwordConfirm: '', nickname: '', role: 'STUDENT' })
 const loading = ref(false)
 
 const handleRegister = async () => {
@@ -22,7 +22,7 @@ const handleRegister = async () => {
   }
   loading.value = true
   try {
-    const res = await authApi.register({ username: f.username, password: f.password, nickname: f.nickname, role: f.role })
+    const res = await authApi.register({ username: f.username, code: f.code, password: f.password, nickname: f.nickname, role: f.role })
     const inner = res?.data ?? res
     if (!inner?.token) {
       const msg = inner?.msg || res?.msg || '注册失败'
@@ -30,7 +30,7 @@ const handleRegister = async () => {
     }
     let role = inner.role || ''
     if (role.startsWith('ROLE_')) role = role.substring(5)
-    auth.setAuth(inner.token, role, inner.username)
+    auth.setAuth(inner.token, role, inner.username, inner.code)
     ElMessage.success('注册成功')
     const routeMap: Record<string, string> = {
       ADMIN: '/admin/dashboard', TEACHER: '/teacher/dashboard', STUDENT: '/student/dashboard',
@@ -54,7 +54,10 @@ const handleRegister = async () => {
       </div>
       <el-form :model="registerForm" @submit.prevent="handleRegister" label-position="top">
         <el-form-item label="用户名">
-          <el-input v-model="registerForm.username" placeholder="用户名 / 学号 / 工号" size="large" />
+          <el-input v-model="registerForm.username" placeholder="登录用户名" size="large" />
+        </el-form-item>
+        <el-form-item label="学号/工号">
+          <el-input v-model="registerForm.code" placeholder="学号或教工号" size="large" />
         </el-form-item>
         <el-form-item label="昵称">
           <el-input v-model="registerForm.nickname" placeholder="你的姓名或昵称" size="large" />

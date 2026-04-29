@@ -7,7 +7,8 @@ USE autograding;
 -- ==========================================================
 CREATE TABLE `user` (
   `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
-  `username` VARCHAR(50) NOT NULL UNIQUE COMMENT '用户名/学号/工号',
+  `username` VARCHAR(50) NOT NULL UNIQUE COMMENT '登录用户名',
+  `code` VARCHAR(50) UNIQUE COMMENT '学号/教工号',
   `password_hash` VARCHAR(100) NOT NULL COMMENT '加密密码',
   `nickname` VARCHAR(50) COMMENT '昵称/真实姓名',
   `avatar` VARCHAR(255) COMMENT '头像URL',
@@ -195,6 +196,23 @@ CREATE TABLE `notification` (
   INDEX `idx_user` (`user_id`),
   CONSTRAINT `fk_notice_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='通知消息表';
+
+-- ==========================================================
+-- 操作日志表 (Operation_Log)
+-- ==========================================================
+CREATE TABLE `operation_log` (
+  `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+  `user_id` BIGINT COMMENT '操作用户ID',
+  `action` VARCHAR(50) COMMENT '操作类型',
+  `target_type` VARCHAR(50) COMMENT '目标类型',
+  `target_id` BIGINT COMMENT '目标ID',
+  `detail` JSON COMMENT '操作详情',
+  `ip_address` VARCHAR(50) COMMENT 'IP地址',
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX `idx_user` (`user_id`),
+  INDEX `idx_created` (`created_at`),
+  CONSTRAINT `fk_oplog_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='操作日志表';
 
 -- ==========================================================
 -- 插入系统默认初始数据

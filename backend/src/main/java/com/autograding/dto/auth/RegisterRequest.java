@@ -11,6 +11,8 @@ public class RegisterRequest {
     @Size(min = 4, max = 50, message = "用户名长度需要在4-50之间")
     private String username;
 
+    private String code;
+
     @NotBlank(message = "密码不能为空")
     @Size(min = 6, max = 64, message = "密码长度需要在6-64之间")
     private String password;

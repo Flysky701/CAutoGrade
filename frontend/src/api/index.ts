@@ -11,18 +11,19 @@ interface AuthPayload {
   token: string
   username: string
   role: string
+  code: string
 }
 
 export const authApi = {
   login: (data: { username: string; password: string }) =>
     api.post<ApiResult<AuthPayload>>('/auth/login', data),
-  register: (data: { username: string; password: string; nickname: string; role: string }) =>
+  register: (data: { username: string; password: string; nickname: string; role: string; code?: string }) =>
     api.post<ApiResult<AuthPayload>>('/auth/register', data),
 };
 
 export const userApi = {
   getProfile: () => api.get('/users/profile'),
-  updateProfile: (data: { nickname?: string; avatar?: string }) =>
+  updateProfile: (data: { nickname?: string; avatar?: string; code?: string }) =>
     api.put('/users/profile', data),
   changePassword: (data: { oldPassword: string; newPassword: string }) =>
     api.post('/users/password', data),

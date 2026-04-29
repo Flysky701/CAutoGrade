@@ -8,6 +8,7 @@ import { roleLabel } from '@/utils'
 const auth = useAuthStore()
 const profile = ref<any>({})
 const nickname = ref('')
+const code = ref('')
 
 const pwForm = reactive({ oldPassword: '', newPassword: '', confirm: '' })
 const savingPw = ref(false)
@@ -17,12 +18,13 @@ onMounted(async () => {
     const res = await userApi.getProfile()
     profile.value = (res as any)?.data || {}
     nickname.value = profile.value.nickname || ''
+    code.value = profile.value.code || ''
   } catch { /* */ }
 })
 
 const handleUpdate = async () => {
   try {
-    await userApi.updateProfile({ nickname: nickname.value })
+    await userApi.updateProfile({ nickname: nickname.value, code: code.value })
     ElMessage.success('更新成功')
   } catch (e: any) {
     ElMessage.error(e?.response?.data?.msg || '更新失败')
@@ -63,6 +65,9 @@ const handleLogout = () => auth.logout()
           <el-form label-width="80px" class="profile-form">
             <el-form-item label="用户名">
               <el-input :model-value="profile.username" disabled />
+            </el-form-item>
+            <el-form-item label="学号/工号">
+              <el-input v-model="code" placeholder="学号" />
             </el-form-item>
             <el-form-item label="角色">
               <el-input :model-value="roleLabel(profile.role)" disabled />

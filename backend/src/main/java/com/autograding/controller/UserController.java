@@ -46,7 +46,7 @@ public class UserController {
     @PutMapping("/profile")
     public Result<User> updateProfile(@RequestBody ProfileRequest request) {
         Long userId = SecurityUtils.getCurrentUserId();
-        return Result.success(userService.updateProfile(userId, request.getNickname(), request.getAvatar()));
+        return Result.success(userService.updateProfile(userId, request.getNickname(), request.getAvatar(), request.getCode()));
     }
 
     @PostMapping("/password")
@@ -88,11 +88,14 @@ public class UserController {
     public static class ProfileRequest {
         private String nickname;
         private String avatar;
+        private String code;
 
         public String getNickname() { return nickname; }
         public void setNickname(String nickname) { this.nickname = nickname; }
         public String getAvatar() { return avatar; }
         public void setAvatar(String avatar) { this.avatar = avatar; }
+        public String getCode() { return code; }
+        public void setCode(String code) { this.code = code; }
     }
 
     public static class ChangePasswordRequest {

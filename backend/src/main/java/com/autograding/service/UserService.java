@@ -57,7 +57,7 @@ public class UserService {
         return userMapper.selectList(wrapper);
     }
 
-    public User updateProfile(Long userId, String nickname, String avatar) {
+    public User updateProfile(Long userId, String nickname, String avatar, String code) {
         User user = userMapper.selectById(userId);
         if (user == null || user.getDeleted() == 1) {
             throw new BusinessException("用户不存在");
@@ -67,6 +67,7 @@ public class UserService {
                 .eq(User::getId, userId)
                 .set(nickname != null, User::getNickname, nickname)
                 .set(avatar != null, User::getAvatar, avatar)
+                .set(code != null, User::getCode, code)
                 .set(User::getUpdatedAt, LocalDateTime.now());
         userMapper.update(null, wrapper);
         return getUserById(userId);

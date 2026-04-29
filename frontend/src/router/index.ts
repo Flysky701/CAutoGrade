@@ -57,6 +57,8 @@ const routes = [
       { path: '', redirect: '/admin/dashboard' },
       { path: 'dashboard', name: 'AdminDashboard', component: () => import('../views/admin/Dashboard.vue') },
       { path: 'users', name: 'UserManage', component: () => import('../views/admin/UserManage.vue') },
+      { path: 'courses', name: 'AdminCourses', component: () => import('../views/admin/AdminCourses.vue') },
+      { path: 'classes', name: 'AdminClasses', component: () => import('../views/admin/AdminClasses.vue') },
       { path: 'config', name: 'SystemConfig', component: () => import('../views/admin/SystemConfig.vue') },
       { path: 'logs', name: 'OperationLog', component: () => import('../views/admin/OperationLog.vue') },
     ],

@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { notificationApi, submissionApi, classApi, assignmentApi } from '@/api'
+import { notificationApi, submissionApi, classApi, assignmentApi, announcementApi } from '@/api'
 import { useCountdown } from '@/composables/useCountdown'
 import { computeGrade, greetingByTime } from '@/utils'
 
@@ -16,6 +16,7 @@ const deadlines = ref<any[]>([])
 const recentGrades = ref<any[]>([])
 const notifications = ref<any[]>([])
 const recentSubmissions = ref<any[]>([])
+const announcements = ref<any[]>([])
 
 const urgencyClass = (endTime: string) => {
   const h = (new Date(endTime).getTime() - Date.now()) / 3600000
@@ -34,6 +35,18 @@ onMounted(async () => {
     const classes = (classRes as any).value?.data || []
     const notifs = (notifRes as any).value?.data || []
     const subs = (subRes as any).value?.data || []
+
+    // Load announcements from all enrolled courses
+    const courseIds = [...new Set(classes.map((c: any) => c.courseId).filter(Boolean))]
+    if (courseIds.length > 0) {
+      const annPromises = courseIds.map((cid: number) =>
+        announcementApi.getByCourse(cid).then((r: any) => r.data || []).catch(() => [])
+      )
+      const allAnnouncements = (await Promise.all(annPromises)).flat()
+      announcements.value = allAnnouncements
+        .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 5)
+    }
 
     stats.value.courses = classes.length
     notifications.value = notifs.slice(0, 5)
@@ -115,6 +128,18 @@ onMounted(async () => {
         </div>
       </el-col>
     </el-row>
+
+    <!-- Announcements -->
+    <el-card v-if="announcements.length" shadow="hover" class="section-card" style="margin-bottom:16px">
+      <template #header><div class="card-header"><span>课程公告</span><el-tag size="small">{{ announcements.length }} 条</el-tag></div></template>
+      <div v-for="a in announcements" :key="a.id" class="list-item">
+        <div>
+          <span v-if="a.pinned" style="color:#f56c6c;margin-right:4px">[置顶]</span>
+          <span class="list-title">{{ a.title }}</span>
+        </div>
+        <span class="list-date">{{ new Date(a.createdAt).toLocaleDateString('zh-CN') }}</span>
+      </div>
+    </el-card>
 
     <!-- Upcoming Deadlines + Recent Grades -->
     <el-row :gutter="16" class="content-row">

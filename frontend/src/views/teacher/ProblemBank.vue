@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { ElMessage, ElMessageBox, ElTable, ElTableColumn, ElButton, ElDialog, ElForm, ElFormItem, ElInput, ElInputNumber, ElSwitch, ElTag, ElTooltip, ElPopconfirm } from 'element-plus'
+import { ref, computed, onMounted } from 'vue'
+import { ElMessage, ElMessageBox, ElTable, ElTableColumn, ElButton, ElDialog, ElForm, ElFormItem, ElInput, ElInputNumber, ElSwitch, ElTag, ElTooltip, ElPopconfirm, ElTabs, ElTabPane } from 'element-plus'
 import { Plus, Delete } from '@element-plus/icons-vue'
 import { problemApi, testCaseApi } from '@/api'
 import { difficultyStars } from '@/utils'
@@ -23,6 +23,9 @@ const editingTestCaseId = ref<number | null>(null)
 const testCaseForm = ref({ inputData: '', expectedOutput: '', isHidden: false, weight: 1 })
 const savingTestCase = ref(false)
 
+const problemTab = ref('mine')
+const publicProblems = ref<any[]>([])
+
 const loadProblems = async () => {
   loading.value = true
   try {
@@ -33,6 +36,21 @@ const loadProblems = async () => {
     loading.value = false
   }
 }
+
+const loadPublicProblems = async () => {
+  loading.value = true
+  try {
+    publicProblems.value = (await problemApi.getPublic() as any).data || []
+  } catch {
+    ElMessage.error('加载公共题库失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+const displayedProblems = computed(() => {
+  return problemTab.value === 'public' ? publicProblems : problems.value
+})
 
 const openCreateProblem = () => {
   editingProblemId.value = null
@@ -165,17 +183,22 @@ const handleDeleteTestCase = async (id: number) => {
   }
 }
 
-onMounted(loadProblems)
+onMounted(() => { loadProblems(); loadPublicProblems() })
 </script>
 
 <template>
   <div class="problem-bank">
     <div class="page-header">
       <h2>题库管理</h2>
-      <el-button type="primary" @click="openCreateProblem">创建题目</el-button>
+      <el-button v-if="problemTab === 'mine'" type="primary" @click="openCreateProblem">创建题目</el-button>
     </div>
 
-    <el-table :data="problems" stripe v-loading="loading">
+    <el-tabs v-model="problemTab" style="margin-bottom:12px" @tab-change="(tab:any) => tab === 'public' && !publicProblems.length && loadPublicProblems()">
+      <el-tab-pane label="我的题目" name="mine" />
+      <el-tab-pane label="公共题库" name="public" />
+    </el-tabs>
+
+    <el-table :data="displayedProblems" stripe v-loading="loading">
       <el-table-column prop="title" label="标题" min-width="200" />
       <el-table-column prop="difficulty" label="难度" width="140">
         <template #default="{ row }">
@@ -196,7 +219,7 @@ onMounted(loadProblems)
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="280">
+      <el-table-column v-if="problemTab === 'mine'" label="操作" width="280">
         <template #default="{ row }">
           <el-button size="small" @click="openEditProblem(row)">编辑</el-button>
           <el-button size="small" type="warning" plain @click="openTestCaseDialog(row.id, row.title)">测试用例</el-button>
