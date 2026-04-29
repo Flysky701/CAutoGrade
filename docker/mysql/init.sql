@@ -198,5 +198,8 @@ CREATE TABLE `notification` (
 -- ==========================================================
 -- 插入系统默认初始数据
 -- ==========================================================
--- 插入超级管理员 (密码默认为 123456 -> 加密后取决于代码实现，暂用明文或约定字符串表示)
-INSERT INTO `user` (`username`, `password_hash`, `nickname`, `role`) VALUES ('admin', '$2a$10$W2neF9.6Agi6kAKVq8q3fec5dHW8KUA.b0VSIGhLOMb/B15aY0.zG', '系统管理员', 'ADMIN');
+-- 插入默认用户 (密码均为 123456)
+INSERT INTO `user` (`username`, `password_hash`, `nickname`, `role`) VALUES
+  ('admin',   '$2a$10$W2neF9.6Agi6kAKVq8q3fec5dHW8KUA.b0VSIGhLOMb/B15aY0.zG', '系统管理员', 'ADMIN'),
+  ('teacher', '$2a$10$.lJeBAuZgEOjwq39jiSNju8KXvOA/gP0sCg9UxySpaXUzD4bw5oSO', '张老师',     'TEACHER'),
+  ('student', '$2a$10$.lJeBAuZgEOjwq39jiSNju8KXvOA/gP0sCg9UxySpaXUzD4bw5oSO', '小明',       'STUDENT');
