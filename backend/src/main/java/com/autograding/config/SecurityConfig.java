@@ -67,8 +67,11 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
+        // localhost:* 不匹配无端口号的 http://localhost（默认端口80不写）
         configuration.setAllowedOriginPatterns(List.of(
+            "http://localhost",
             "http://localhost:*",
+            "http://127.0.0.1",
             "http://127.0.0.1:*"
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
