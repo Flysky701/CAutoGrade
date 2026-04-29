@@ -23,10 +23,14 @@ const handleRegister = async () => {
   loading.value = true
   try {
     const res = await authApi.register({ username: f.username, password: f.password, nickname: f.nickname, role: f.role })
-    const data = res.data || res
-    let role = data.role || ''
+    const inner = res?.data ?? res
+    if (!inner?.token) {
+      const msg = inner?.msg || res?.msg || '注册失败'
+      throw new Error(msg)
+    }
+    let role = inner.role || ''
     if (role.startsWith('ROLE_')) role = role.substring(5)
-    auth.setAuth(data.token, role, data.username)
+    auth.setAuth(inner.token, role, inner.username)
     ElMessage.success('注册成功')
     const routeMap: Record<string, string> = {
       ADMIN: '/admin/dashboard', TEACHER: '/teacher/dashboard', STUDENT: '/student/dashboard',

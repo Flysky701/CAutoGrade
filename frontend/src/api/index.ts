@@ -1,10 +1,23 @@
 import api from './request';
 
+// 后端统一返回 Result<T> = { code: number; msg: string; data: T }
+interface ApiResult<T> {
+  code: number
+  msg: string
+  data: T
+}
+
+interface AuthPayload {
+  token: string
+  username: string
+  role: string
+}
+
 export const authApi = {
   login: (data: { username: string; password: string }) =>
-    api.post<{ token: string; username: string; role: string }>('/auth/login', data),
+    api.post<ApiResult<AuthPayload>>('/auth/login', data),
   register: (data: { username: string; password: string; nickname: string; role: string }) =>
-    api.post<{ token: string; username: string; role: string }>('/auth/register', data),
+    api.post<ApiResult<AuthPayload>>('/auth/register', data),
 };
 
 export const userApi = {

@@ -18,20 +18,24 @@ const handleLogin = async () => {
   loading.value = true
   try {
     const res = await authApi.login(loginForm.value)
-    // 后端返回 Result<T> = { code, msg, data }，axios 拦截器已取 response.data
-    // 所以 res = { code, msg, data: { token, username, role } }
-    const data = res?.data || res
-    let role = data?.role || ''
-    if (role.startsWith('ROLE_')) role = role.substring(5)
-    if (!data?.token) {
-      throw new Error(data?.msg || res?.msg || '登录响应缺少 token')
+    // axios 拦截器返回 response.data，即 HTTP body = { code, msg, data: {...} }
+    // res.data 是业务数据 { token, username, role }
+    const inner = res?.data ?? res
+    if (!inner?.token) {
+      const msg = inner?.msg || res?.msg || '登录失败，请检查用户名和密码'
+      throw new Error(msg)
     }
-    auth.setAuth(data.token, role, data.username)
-    ElMessage.success('登录成功')
+
+    let role = inner.role || ''
+    if (role.startsWith('ROLE_')) role = role.substring(5)
+
+    auth.setAuth(inner.token, role, inner.username)
+    // 确保 localStorage 已写入后再跳转
+    await new Promise(r => setTimeout(r, 0))
     const routeMap: Record<string, string> = {
       ADMIN: '/admin/dashboard', TEACHER: '/teacher/dashboard', STUDENT: '/student/dashboard',
     }
-    router.push(routeMap[role] || '/student/dashboard')
+    await router.replace(routeMap[role] || '/student/dashboard')
   } catch (error: any) {
     ElMessage.error(error.response?.data?.msg || error.message || '登录失败')
   } finally {
