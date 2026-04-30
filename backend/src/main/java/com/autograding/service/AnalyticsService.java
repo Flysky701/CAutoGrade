@@ -49,8 +49,17 @@ public class AnalyticsService {
             );
         }
 
+        List<Long> studentIds = classStudents.stream()
+                .map(ClassStudent::getStudentId)
+                .distinct()
+                .collect(Collectors.toList());
+
         LambdaQueryWrapper<Submission> subWrapper = new LambdaQueryWrapper<>();
-        subWrapper.eq(Submission::getStudentId, 0L);
+        if (!studentIds.isEmpty()) {
+            subWrapper.in(Submission::getStudentId, studentIds);
+        } else {
+            subWrapper.eq(Submission::getStudentId, 0L);
+        }
         List<Submission> submissions = submissionMapper.selectList(subWrapper);
 
         int submittedCount = submissions.stream()

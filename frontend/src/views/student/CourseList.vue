@@ -24,7 +24,7 @@ const handleJoin = async () => {
     joinCode.value = ''
     loadCourses()
   } catch (e: any) {
-    ElMessage.error(e.response?.data?.msg || '加入失败')
+    ElMessage.error(e?.message || e?.response?.data?.msg || '加入失败')
   } finally { loading.value = false }
 }
 

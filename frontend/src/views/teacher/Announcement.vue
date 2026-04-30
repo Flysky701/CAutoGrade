@@ -66,18 +66,13 @@ const handleSave = async () => {
       await announcementApi.update(editingId.value, data)
       ElMessage.success('更新成功')
     } else {
-      const res: any = await announcementApi.create(data)
-      const created = res?.data || res
-      announcements.value.unshift({
-        ...data, id: created?.id,
-        courseName: courses.value.find((c: any) => c.id === data.courseId)?.name || '',
-        createdAt: new Date().toISOString(),
-      })
+      await announcementApi.create(data)
       ElMessage.success('发布成功')
     }
+    await loadAnnouncements()
     showDialog.value = false
   } catch (e: any) {
-    ElMessage.error(e.response?.data?.msg || '保存失败')
+    ElMessage.error(e?.message || e?.response?.data?.msg || '保存失败')
   } finally {
     saving.value = false
   }

@@ -7,6 +7,7 @@ import com.autograding.entity.Course;
 import com.autograding.entity.User;
 import com.autograding.mapper.CourseMapper;
 import com.autograding.mapper.UserMapper;
+import com.autograding.security.SecurityUtils;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.springframework.stereotype.Service;
@@ -20,10 +21,12 @@ public class CourseService {
 
     private final CourseMapper courseMapper;
     private final UserMapper userMapper;
+    private final OperationLogService operationLogService;
 
-    public CourseService(CourseMapper courseMapper, UserMapper userMapper) {
+    public CourseService(CourseMapper courseMapper, UserMapper userMapper, OperationLogService operationLogService) {
         this.courseMapper = courseMapper;
         this.userMapper = userMapper;
+        this.operationLogService = operationLogService;
     }
 
     public CourseResponse createCourse(CourseCreateRequest request, Long teacherId) {
@@ -45,6 +48,8 @@ public class CourseService {
         courseMapper.insert(course);
 
         course.setTeacher(teacher);
+        operationLogService.logOperation(SecurityUtils.getCurrentUserId(), "CREATE_COURSE", "COURSE", course.getId(),
+                "创建课程: " + course.getName(), null);
         return CourseResponse.fromEntity(course);
     }
 
@@ -103,7 +108,8 @@ public class CourseService {
                 .set(request.getCoverUrl() != null, Course::getCoverUrl, request.getCoverUrl())
                 .set(Course::getUpdatedAt, LocalDateTime.now());
         courseMapper.update(null, wrapper);
-
+        operationLogService.logOperation(SecurityUtils.getCurrentUserId(), "UPDATE_COURSE", "COURSE", id,
+                "更新课程", null);
         return getCourseById(id);
     }
 
@@ -121,6 +127,8 @@ public class CourseService {
                 .set(Course::getDeleted, 1)
                 .set(Course::getUpdatedAt, LocalDateTime.now());
         courseMapper.update(null, wrapper);
+        operationLogService.logOperation(SecurityUtils.getCurrentUserId(), "DELETE_COURSE", "COURSE", id,
+                "删除课程", null);
     }
 
     private CourseResponse enrichAndConvert(Course course) {

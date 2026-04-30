@@ -52,6 +52,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // 开放预检 OPTIONS 请求（CORS preflight）
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                // 健康检查
+                .requestMatchers("/api/health").permitAll()
                 // 开放登录、注册
                 .requestMatchers("/api/auth/**").permitAll()
                 // 开放Swagger接口相关

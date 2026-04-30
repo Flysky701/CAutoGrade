@@ -16,14 +16,16 @@ onMounted(async () => {
     submissions.value = (res?.data || []).reverse()
 
     const ids = [...new Set(submissions.value.map((s: any) => s.assignmentId))]
+    const names: Record<number, string> = {}
     await Promise.all(ids.map(async (aid) => {
       try {
         const aRes = await assignmentApi.getById(aid) as any
-        assignmentNames.value[aid] = aRes?.data?.title || `作业 #${aid}`
+        names[aid as number] = aRes?.data?.title || `作业 #${aid}`
       } catch {
-        assignmentNames.value[aid] = `作业 #${aid}`
+        names[aid as number] = `作业 #${aid}`
       }
     }))
+    assignmentNames.value = names
   } catch { /* */ }
   finally { loading.value = false }
 })

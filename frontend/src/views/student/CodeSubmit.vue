@@ -36,7 +36,7 @@ const handleSubmit = async () => {
     ElMessage.success('提交成功，正在批阅...')
     router.push('/student/history')
   } catch (e: any) {
-    ElMessage.error(e.response?.data?.msg || '提交失败')
+    ElMessage.error(e?.message || e?.response?.data?.msg || '提交失败')
   } finally {
     loading.value = false
   }

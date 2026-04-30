@@ -49,9 +49,29 @@ public class SubmissionController {
     }
 
     @GetMapping("/student")
-    public Result<List<Submission>> getMySubmissions() {
+    public Result<List<java.util.Map<String, Object>>> getMySubmissions() {
         Long studentId = SecurityUtils.getCurrentUserId();
-        return Result.success(submissionService.getSubmissionsByStudent(studentId));
+        List<Submission> submissions = submissionService.getSubmissionsByStudent(studentId);
+        List<java.util.Map<String, Object>> result = new java.util.ArrayList<>();
+        for (Submission s : submissions) {
+            java.util.Map<String, Object> map = new java.util.HashMap<>();
+            map.put("id", s.getId());
+            map.put("assignmentId", s.getAssignmentId());
+            map.put("problemId", s.getProblemId());
+            map.put("codeContent", s.getCodeContent());
+            map.put("language", s.getLanguage());
+            map.put("submitCount", s.getSubmitCount());
+            map.put("isLate", s.getIsLate());
+            map.put("submittedAt", s.getSubmittedAt());
+            GradingResult gr = submissionService.getGradingResultBySubmission(s.getId());
+            if (gr != null) {
+                map.put("gradingStatus", gr.getGradingStatus());
+                map.put("totalScore", gr.getTotalScore());
+                map.put("humanAdjustedScore", gr.getHumanAdjustedScore());
+            }
+            result.add(map);
+        }
+        return Result.success(result);
     }
 
     @GetMapping("/assignment/{assignmentId}")

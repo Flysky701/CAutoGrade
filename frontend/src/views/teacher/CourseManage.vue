@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage, ElTable, ElTableColumn, ElButton, ElDialog, ElForm, ElFormItem, ElInput, ElTag, ElTooltip, ElAlert } from 'element-plus'
-import { CopyDocument } from '@element-plus/icons-vue'
+import { ElMessage, ElTable, ElTableColumn, ElButton, ElDialog, ElForm, ElFormItem, ElInput, ElTag, ElAlert } from 'element-plus'
 import { courseApi } from '@/api'
 
 const router = useRouter()
@@ -29,7 +28,7 @@ const handleCreate = async () => {
     form.value = { name: '', description: '', semester: '' }
     loadCourses()
   } catch (e: any) {
-    ElMessage.error(e.response?.data?.msg || '创建失败')
+    ElMessage.error(e?.message || e?.response?.data?.msg || '创建失败')
   } finally { saving.value = false }
 }
 
@@ -51,17 +50,6 @@ onMounted(loadCourses)
     <el-table :data="courses" stripe>
       <el-table-column prop="name" label="课程名称" min-width="160" />
       <el-table-column prop="semester" label="学期" width="120" />
-      <el-table-column label="选课码" width="130">
-        <template #default="{ row }">
-          <template v-if="row.inviteCode">
-            <span class="invite-code">{{ row.inviteCode }}</span>
-            <el-tooltip content="复制选课码">
-              <el-button size="small" :icon="CopyDocument" circle @click="copyCode(row.inviteCode)" />
-            </el-tooltip>
-          </template>
-          <span v-else style="color:var(--text-placeholder)">—</span>
-        </template>
-      </el-table-column>
       <el-table-column label="状态" width="90">
         <template #default="{ row }">
           <el-tag :type="row.status === 'ACTIVE' ? 'success' : 'info'" size="small">

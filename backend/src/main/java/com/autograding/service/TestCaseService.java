@@ -22,6 +22,7 @@ public class TestCaseService {
     public TestCase createTestCase(TestCase testCase) {
         testCase.setCreatedAt(LocalDateTime.now());
         testCase.setUpdatedAt(LocalDateTime.now());
+        testCase.setDeleted(0);
         testCaseMapper.insert(testCase);
         return testCase;
     }

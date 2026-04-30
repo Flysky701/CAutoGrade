@@ -2,8 +2,12 @@ package com.autograding.service;
 
 import com.autograding.common.BusinessException;
 import com.autograding.entity.Announcement;
+import com.autograding.entity.Class;
+import com.autograding.entity.ClassStudent;
 import com.autograding.entity.Course;
 import com.autograding.mapper.AnnouncementMapper;
+import com.autograding.mapper.ClassMapper;
+import com.autograding.mapper.ClassStudentMapper;
 import com.autograding.mapper.CourseMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
@@ -17,10 +21,15 @@ public class AnnouncementService {
 
     private final AnnouncementMapper announcementMapper;
     private final CourseMapper courseMapper;
+    private final ClassStudentMapper classStudentMapper;
+    private final ClassMapper classMapper;
 
-    public AnnouncementService(AnnouncementMapper announcementMapper, CourseMapper courseMapper) {
+    public AnnouncementService(AnnouncementMapper announcementMapper, CourseMapper courseMapper,
+                               ClassStudentMapper classStudentMapper, ClassMapper classMapper) {
         this.announcementMapper = announcementMapper;
         this.courseMapper = courseMapper;
+        this.classStudentMapper = classStudentMapper;
+        this.classMapper = classMapper;
     }
 
     public Announcement createAnnouncement(Announcement announcement, Long publisherId) {
@@ -34,6 +43,7 @@ public class AnnouncementService {
 
         announcement.setPublisherId(publisherId);
         announcement.setCreatedAt(LocalDateTime.now());
+        announcement.setDeleted(0);
         announcementMapper.insert(announcement);
         return announcement;
     }
@@ -41,6 +51,32 @@ public class AnnouncementService {
     public List<Announcement> getAnnouncementsByCourse(Long courseId) {
         LambdaQueryWrapper<Announcement> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Announcement::getCourseId, courseId)
+               .eq(Announcement::getDeleted, 0)
+               .orderByDesc(Announcement::getIsPinned)
+               .orderByDesc(Announcement::getCreatedAt);
+        return announcementMapper.selectList(wrapper);
+    }
+
+    public List<Announcement> getAnnouncementsForStudent(Long studentId) {
+        // 1. 获取学生加入的所有班级
+        LambdaQueryWrapper<ClassStudent> csWrapper = new LambdaQueryWrapper<>();
+        csWrapper.eq(ClassStudent::getStudentId, studentId);
+        List<Long> classIds = classStudentMapper.selectList(csWrapper)
+                .stream().map(ClassStudent::getClassId).collect(java.util.stream.Collectors.toList());
+        if (classIds.isEmpty()) {
+            return List.of();
+        }
+
+        // 2. 获取这些班级对应的课程ID
+        List<Long> courseIds = classMapper.selectBatchIds(classIds)
+                .stream().map(Class::getCourseId).distinct().collect(java.util.stream.Collectors.toList());
+        if (courseIds.isEmpty()) {
+            return List.of();
+        }
+
+        // 3. 查询这些课程的公告
+        LambdaQueryWrapper<Announcement> wrapper = new LambdaQueryWrapper<>();
+        wrapper.in(Announcement::getCourseId, courseIds)
                .eq(Announcement::getDeleted, 0)
                .orderByDesc(Announcement::getIsPinned)
                .orderByDesc(Announcement::getCreatedAt);

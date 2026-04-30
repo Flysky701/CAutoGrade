@@ -134,7 +134,7 @@ onMounted(async () => {
       <template #header><div class="card-header"><span>课程公告</span><el-tag size="small">{{ announcements.length }} 条</el-tag></div></template>
       <div v-for="a in announcements" :key="a.id" class="list-item">
         <div>
-          <span v-if="a.pinned" style="color:#f56c6c;margin-right:4px">[置顶]</span>
+          <span v-if="a.isPinned == 1" style="color:#f56c6c;margin-right:4px">[置顶]</span>
           <span class="list-title">{{ a.title }}</span>
         </div>
         <span class="list-date">{{ new Date(a.createdAt).toLocaleDateString('zh-CN') }}</span>

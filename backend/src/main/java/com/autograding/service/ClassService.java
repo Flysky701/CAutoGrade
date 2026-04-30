@@ -11,6 +11,7 @@ import com.autograding.mapper.ClassMapper;
 import com.autograding.mapper.ClassStudentMapper;
 import com.autograding.mapper.CourseMapper;
 import com.autograding.mapper.UserMapper;
+import com.autograding.security.SecurityUtils;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.springframework.stereotype.Service;
@@ -27,15 +28,18 @@ public class ClassService {
     private final ClassStudentMapper classStudentMapper;
     private final CourseMapper courseMapper;
     private final UserMapper userMapper;
+    private final OperationLogService operationLogService;
 
     public ClassService(ClassMapper classMapper,
                         ClassStudentMapper classStudentMapper,
                         CourseMapper courseMapper,
-                        UserMapper userMapper) {
+                        UserMapper userMapper,
+                        OperationLogService operationLogService) {
         this.classMapper = classMapper;
         this.classStudentMapper = classStudentMapper;
         this.courseMapper = courseMapper;
         this.userMapper = userMapper;
+        this.operationLogService = operationLogService;
     }
 
     public ClassResponse createClass(ClassCreateRequest request, Long teacherId) {
@@ -58,6 +62,8 @@ public class ClassService {
         cls.setCourse(course);
         ClassResponse response = ClassResponse.fromEntity(cls);
         response.setStudentCount(0);
+        operationLogService.logOperation(SecurityUtils.getCurrentUserId(), "CREATE_CLASS", "CLASS", cls.getId(),
+                "创建班级: " + cls.getName(), null);
         return response;
     }
 
@@ -148,6 +154,14 @@ public class ClassService {
             throw new BusinessException("班级不存在");
         }
 
+        User student = userMapper.selectById(studentId);
+        if (student == null || student.getDeleted() == 1) {
+            throw new BusinessException("学生不存在");
+        }
+        if (student.getRole() != User.Role.STUDENT) {
+            throw new BusinessException("只能添加学生角色到班级");
+        }
+
         LambdaQueryWrapper<ClassStudent> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(ClassStudent::getClassId, classId)
                .eq(ClassStudent::getStudentId, studentId);
@@ -160,6 +174,8 @@ public class ClassService {
         cs.setStudentId(studentId);
         cs.setJoinedAt(LocalDateTime.now());
         classStudentMapper.insert(cs);
+        operationLogService.logOperation(SecurityUtils.getCurrentUserId(), "ADD_STUDENT", "CLASS", classId,
+                "添加学生到班级, studentId=" + studentId, null);
     }
 
     public void removeStudentFromClass(Long classId, Long studentId) {
@@ -167,6 +183,8 @@ public class ClassService {
         wrapper.eq(ClassStudent::getClassId, classId)
                .eq(ClassStudent::getStudentId, studentId);
         classStudentMapper.delete(wrapper);
+        operationLogService.logOperation(SecurityUtils.getCurrentUserId(), "REMOVE_STUDENT", "CLASS", classId,
+                "从班级移除学生, studentId=" + studentId, null);
     }
 
     public List<User> getClassStudents(Long classId) {
@@ -179,7 +197,9 @@ public class ClassService {
             return List.of();
         }
 
-        return userMapper.selectBatchIds(studentIds);
+        return userMapper.selectBatchIds(studentIds).stream()
+                .filter(u -> u.getDeleted() == 0 && u.getRole() == User.Role.STUDENT)
+                .collect(Collectors.toList());
     }
 
     public void deleteClass(Long id, Long teacherId) {
@@ -198,6 +218,8 @@ public class ClassService {
                 .set(Class::getDeleted, 1)
                 .set(Class::getUpdatedAt, LocalDateTime.now());
         classMapper.update(null, wrapper);
+        operationLogService.logOperation(SecurityUtils.getCurrentUserId(), "DELETE_CLASS", "CLASS", id,
+                "删除班级", null);
     }
 
     private String generateInviteCode() {

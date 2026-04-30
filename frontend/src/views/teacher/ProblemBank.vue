@@ -105,7 +105,7 @@ const handleSaveProblem = async () => {
     showProblemDialog.value = false
     loadProblems()
   } catch (e: any) {
-    ElMessage.error(e.response?.data?.msg || '保存失败')
+    ElMessage.error(e?.message || e?.response?.data?.msg || '保存失败')
   } finally {
     savingProblem.value = false
   }
@@ -167,7 +167,7 @@ const handleSaveTestCase = async () => {
     showTestCaseForm.value = false
     openTestCaseDialog(currentProblemId.value, currentProblemTitle.value)
   } catch (e: any) {
-    ElMessage.error(e.response?.data?.msg || '保存失败')
+    ElMessage.error(e?.message || e?.response?.data?.msg || '保存失败')
   } finally {
     savingTestCase.value = false
   }

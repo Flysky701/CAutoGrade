@@ -54,7 +54,7 @@ const handleSaveLLM = async () => {
     await api.put('/admin/config/llm', { ...llmConfig })
     ElMessage.success('LLM 配置保存成功')
   } catch (e: any) {
-    ElMessage.error(e.response?.data?.msg || '保存失败')
+    ElMessage.error(e?.message || e?.response?.data?.msg || '保存失败')
   } finally { savingLLM.value = false }
 }
 
@@ -64,7 +64,7 @@ const handleSaveSandbox = async () => {
     await api.put('/admin/config/sandbox', { ...sandboxConfig })
     ElMessage.success('沙箱配置保存成功')
   } catch (e: any) {
-    ElMessage.error(e.response?.data?.msg || '保存失败')
+    ElMessage.error(e?.message || e?.response?.data?.msg || '保存失败')
   } finally { savingSandbox.value = false }
 }
 
@@ -78,7 +78,7 @@ const handleSaveScoring = async () => {
     await api.put('/admin/config/scoring', { ...scoringConfig })
     ElMessage.success('评分配置保存成功')
   } catch (e: any) {
-    ElMessage.error(e.response?.data?.msg || '保存失败')
+    ElMessage.error(e?.message || e?.response?.data?.msg || '保存失败')
   } finally { savingScoring.value = false }
 }
 

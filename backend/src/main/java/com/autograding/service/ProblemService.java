@@ -5,6 +5,7 @@ import com.autograding.entity.Problem;
 import com.autograding.entity.User;
 import com.autograding.mapper.ProblemMapper;
 import com.autograding.mapper.UserMapper;
+import com.autograding.security.SecurityUtils;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -19,11 +20,13 @@ public class ProblemService {
 
     private final ProblemMapper problemMapper;
     private final UserMapper userMapper;
+    private final OperationLogService operationLogService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public ProblemService(ProblemMapper problemMapper, UserMapper userMapper) {
+    public ProblemService(ProblemMapper problemMapper, UserMapper userMapper, OperationLogService operationLogService) {
         this.problemMapper = problemMapper;
         this.userMapper = userMapper;
+        this.operationLogService = operationLogService;
     }
 
     public Problem createProblem(Problem problem, Long creatorId) {
@@ -34,9 +37,14 @@ public class ProblemService {
 
         normalizeKnowledgeTags(problem);
         problem.setCreatorId(creatorId);
+        if (problem.getIsPublic() == null) {
+            problem.setIsPublic(0);
+        }
         problem.setCreatedAt(LocalDateTime.now());
         problem.setUpdatedAt(LocalDateTime.now());
         problemMapper.insert(problem);
+        operationLogService.logOperation(SecurityUtils.getCurrentUserId(), "CREATE_PROBLEM", "PROBLEM", problem.getId(),
+                "创建题目: " + problem.getTitle(), null);
         return problem;
     }
 
@@ -110,6 +118,8 @@ public class ProblemService {
                 .set(request.getIsPublic() != null, Problem::getIsPublic, request.getIsPublic())
                 .set(Problem::getUpdatedAt, LocalDateTime.now());
         problemMapper.update(null, wrapper);
+        operationLogService.logOperation(SecurityUtils.getCurrentUserId(), "UPDATE_PROBLEM", "PROBLEM", id,
+                "更新题目", null);
         return getProblemById(id);
     }
 
@@ -127,5 +137,7 @@ public class ProblemService {
                 .set(Problem::getDeleted, 1)
                 .set(Problem::getUpdatedAt, LocalDateTime.now());
         problemMapper.update(null, wrapper);
+        operationLogService.logOperation(SecurityUtils.getCurrentUserId(), "DELETE_PROBLEM", "PROBLEM", id,
+                "删除题目", null);
     }
 }

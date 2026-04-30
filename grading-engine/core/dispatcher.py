@@ -43,18 +43,21 @@ class Dispatcher:
         )
 
         # Layer 3: LLM evaluation
-        llm_feedback = self.llm_service.evaluate(
-            code_content=code_content,
-            static_result={
-                "compile_success": static_result.compile_success,
-                "compile_error": static_result.compile_error,
-                "passed_cases": static_result.passed_cases,
-                "total_cases": static_result.total_cases,
-                "warnings": static_result.warnings,
-                "test_case_details": test_case_summary,
-            },
-            rag_context=rag_context,
-        )
+        try:
+            llm_feedback = self.llm_service.evaluate(
+                code_content=code_content,
+                static_result={
+                    "compile_success": static_result.compile_success,
+                    "compile_error": static_result.compile_error,
+                    "passed_cases": static_result.passed_cases,
+                    "total_cases": static_result.total_cases,
+                    "warnings": static_result.warnings,
+                    "test_case_details": test_case_summary,
+                },
+                rag_context=rag_context,
+            )
+        except Exception as e:
+            llm_feedback = {"total_score": None, "error": str(e)}
 
         # Fallback: rule-based scoring when LLM output deviates
         fallback_score = self.rule_scorer.score({

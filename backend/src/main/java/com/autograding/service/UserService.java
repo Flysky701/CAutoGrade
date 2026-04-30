@@ -3,6 +3,7 @@ package com.autograding.service;
 import com.autograding.common.BusinessException;
 import com.autograding.entity.User;
 import com.autograding.mapper.UserMapper;
+import com.autograding.security.SecurityUtils;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -16,10 +17,12 @@ public class UserService {
 
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
+    private final OperationLogService operationLogService;
 
-    public UserService(UserMapper userMapper, PasswordEncoder passwordEncoder) {
+    public UserService(UserMapper userMapper, PasswordEncoder passwordEncoder, OperationLogService operationLogService) {
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
+        this.operationLogService = operationLogService;
     }
 
     public User getUserById(Long id) {
@@ -63,6 +66,11 @@ public class UserService {
             throw new BusinessException("用户不存在");
         }
 
+        // 普通用户（非管理员）不允许自行修改学号/工号
+        if (code != null && !code.equals(user.getCode()) && user.getRole() != User.Role.ADMIN) {
+            throw new BusinessException("无权修改学号/工号");
+        }
+
         LambdaUpdateWrapper<User> wrapper = new LambdaUpdateWrapper<User>()
                 .eq(User::getId, userId)
                 .set(nickname != null, User::getNickname, nickname)
@@ -90,12 +98,112 @@ public class UserService {
         userMapper.update(null, wrapper);
     }
 
+    // ==================== 管理员专用 ====================
+
+    public User createUserByAdmin(User user) {
+        if (user.getUsername() == null || user.getUsername().isBlank()) {
+            throw new BusinessException("用户名不能为空");
+        }
+        User existing = userMapper.selectOne(new LambdaQueryWrapper<User>()
+                .eq(User::getUsername, user.getUsername())
+                .eq(User::getDeleted, 0)
+                .last("limit 1"));
+        if (existing != null) {
+            throw new BusinessException("用户名已存在");
+        }
+        if (user.getCode() != null && !user.getCode().isBlank()) {
+            User codeExists = userMapper.selectOne(new LambdaQueryWrapper<User>()
+                    .eq(User::getCode, user.getCode())
+                    .eq(User::getDeleted, 0)
+                    .last("limit 1"));
+            if (codeExists != null) {
+                throw new BusinessException("学号/工号已存在");
+            }
+        }
+        user.setPasswordHash(passwordEncoder.encode(user.getPasswordHash() != null ? user.getPasswordHash() : "123456"));
+        user.setStatus(1);
+        user.setDeleted(0);
+        user.setCreatedAt(LocalDateTime.now());
+        user.setUpdatedAt(LocalDateTime.now());
+        userMapper.insert(user);
+        operationLogService.logOperation(SecurityUtils.getCurrentUserId(), "CREATE_USER", "USER", user.getId(),
+                "管理员创建用户: " + user.getUsername(), null);
+        return user;
+    }
+
+    public User updateUserByAdmin(Long userId, User request) {
+        User user = userMapper.selectById(userId);
+        if (user == null || user.getDeleted() == 1) {
+            throw new BusinessException("用户不存在");
+        }
+
+        // 校验用户名唯一
+        if (request.getUsername() != null && !request.getUsername().equals(user.getUsername())) {
+            User exists = userMapper.selectOne(new LambdaQueryWrapper<User>()
+                    .eq(User::getUsername, request.getUsername())
+                    .eq(User::getDeleted, 0)
+                    .last("limit 1"));
+            if (exists != null) {
+                throw new BusinessException("用户名已存在");
+            }
+        }
+
+        // 校验学号/工号唯一
+        if (request.getCode() != null && !request.getCode().equals(user.getCode())) {
+            User codeExists = userMapper.selectOne(new LambdaQueryWrapper<User>()
+                    .eq(User::getCode, request.getCode())
+                    .eq(User::getDeleted, 0)
+                    .last("limit 1"));
+            if (codeExists != null) {
+                throw new BusinessException("学号/工号已存在");
+            }
+        }
+
+        LambdaUpdateWrapper<User> wrapper = new LambdaUpdateWrapper<User>()
+                .eq(User::getId, userId)
+                .set(request.getUsername() != null, User::getUsername, request.getUsername())
+                .set(request.getCode() != null, User::getCode, request.getCode())
+                .set(request.getNickname() != null, User::getNickname, request.getNickname())
+                .set(request.getAvatar() != null, User::getAvatar, request.getAvatar())
+                .set(request.getRole() != null, User::getRole, request.getRole())
+                .set(request.getStatus() != null, User::getStatus, request.getStatus())
+                .set(User::getUpdatedAt, LocalDateTime.now());
+
+        if (request.getPasswordHash() != null && !request.getPasswordHash().isBlank()) {
+            wrapper.set(User::getPasswordHash, passwordEncoder.encode(request.getPasswordHash()));
+        }
+
+        userMapper.update(null, wrapper);
+        operationLogService.logOperation(SecurityUtils.getCurrentUserId(), "UPDATE_USER", "USER", userId,
+                "管理员更新用户信息", null);
+        return getUserById(userId);
+    }
+
+    public void deleteUser(Long userId) {
+        User user = userMapper.selectById(userId);
+        if (user == null || user.getDeleted() == 1) {
+            throw new BusinessException("用户不存在");
+        }
+        if (user.getRole() == User.Role.ADMIN) {
+            throw new BusinessException("不能删除管理员账号");
+        }
+        LambdaUpdateWrapper<User> wrapper = new LambdaUpdateWrapper<User>()
+                .eq(User::getId, userId)
+                .set(User::getDeleted, 1)
+                .set(User::getUpdatedAt, LocalDateTime.now());
+        userMapper.update(null, wrapper);
+        operationLogService.logOperation(SecurityUtils.getCurrentUserId(), "DELETE_USER", "USER", userId,
+                "管理员删除用户: " + user.getUsername(), null);
+    }
+
     public void resetPassword(Long userId, String newPassword) {
         LambdaUpdateWrapper<User> wrapper = new LambdaUpdateWrapper<User>()
                 .eq(User::getId, userId)
                 .set(User::getPasswordHash, passwordEncoder.encode(newPassword))
                 .set(User::getUpdatedAt, LocalDateTime.now());
         userMapper.update(null, wrapper);
+        operationLogService.logOperation(SecurityUtils.getCurrentUserId(), "RESET_PASSWORD", "USER", userId,
+                "管理员重置用户密码", null);
     }
 
     public void disableUser(Long userId) {
@@ -104,6 +212,8 @@ public class UserService {
                 .set(User::getStatus, 0)
                 .set(User::getUpdatedAt, LocalDateTime.now());
         userMapper.update(null, wrapper);
+        operationLogService.logOperation(SecurityUtils.getCurrentUserId(), "DISABLE_USER", "USER", userId,
+                "管理员禁用用户", null);
     }
 
     public void enableUser(Long userId) {
@@ -112,5 +222,7 @@ public class UserService {
                 .set(User::getStatus, 1)
                 .set(User::getUpdatedAt, LocalDateTime.now());
         userMapper.update(null, wrapper);
+        operationLogService.logOperation(SecurityUtils.getCurrentUserId(), "ENABLE_USER", "USER", userId,
+                "管理员启用用户", null);
     }
 }

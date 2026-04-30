@@ -45,7 +45,7 @@ const handleCreate = async () => {
     createForm.value.name = ''
     loadClasses()
   } catch (e: any) {
-    ElMessage.error(e.response?.data?.msg || '创建失败')
+    ElMessage.error(e?.message || e?.response?.data?.msg || '创建失败')
   } finally {
     creating.value = false
   }
@@ -60,10 +60,10 @@ const toggleStudents = async (classId: number) => {
   if (!classStudents.value[classId]) {
     try {
       const res = await classApi.getClassStudents(classId)
-      classStudents.value[classId] = (res as any).data || []
+      classStudents.value = { ...classStudents.value, [classId]: (res as any).data || [] }
     } catch {
       ElMessage.error('加载学生列表失败')
-      classStudents.value[classId] = []
+      classStudents.value = { ...classStudents.value, [classId]: [] }
     }
   }
 }
@@ -93,9 +93,12 @@ const handleAddStudent = async (student: any) => {
     ElMessage.success(`已添加学生 ${student.nickname || student.username}`)
     searchUsername.value = ''
     searchResults.value = []
-    delete classStudents.value[currentClassId.value]
+    showAddStudentDialog.value = false
+    // 重新加载该班级学生列表以刷新UI
+    const res = await classApi.getClassStudents(currentClassId.value)
+    classStudents.value = { ...classStudents.value, [currentClassId.value]: (res as any).data || [] }
   } catch (e: any) {
-    ElMessage.error(e.response?.data?.msg || '添加失败')
+    ElMessage.error(e?.message || e?.response?.data?.msg || '添加失败')
   }
 }
 
@@ -104,7 +107,8 @@ const handleRemoveStudent = async (classId: number, studentId: number, name: str
     await ElMessageBox.confirm(`确认将学生 ${name} 移出班级？`, '确认', { type: 'warning' })
     await classApi.removeStudent(classId, studentId)
     ElMessage.success('已移除')
-    delete classStudents.value[classId]
+    const res = await classApi.getClassStudents(classId)
+    classStudents.value = { ...classStudents.value, [classId]: (res as any).data || [] }
     expandedClass.value = null
   } catch { /* cancelled */ }
 }

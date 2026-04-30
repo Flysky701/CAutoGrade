@@ -31,10 +31,10 @@ docker/redis/data/
 Thumbs.db
 
 # AI assistant configs
-CLAUDE.md
-CODEBUDDY.md
 .claude/
 .github/
+CLAUDE.md
+CODEBUDDY.md
 
 # Logs
 *.log

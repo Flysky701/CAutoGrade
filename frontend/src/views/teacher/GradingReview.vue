@@ -67,7 +67,7 @@ const handleReview = async () => {
     detailDialogVisible.value = false
     loadUnreviewed()
   } catch (e: any) {
-    ElMessage.error(e.response?.data?.msg || '审核失败')
+    ElMessage.error(e?.message || e?.response?.data?.msg || '审核失败')
   } finally {
     reviewing.value = false
   }

@@ -67,7 +67,7 @@ const handleLogout = () => auth.logout()
               <el-input :model-value="profile.username" disabled />
             </el-form-item>
             <el-form-item label="教工号">
-              <el-input v-model="code" placeholder="教工号" />
+              <el-input v-model="code" placeholder="教工号" disabled />
             </el-form-item>
             <el-form-item label="角色">
               <el-input :model-value="roleLabel(profile.role)" disabled />

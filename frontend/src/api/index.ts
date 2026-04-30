@@ -35,6 +35,13 @@ export const userApi = {
     api.post(`/users/${id}/reset-password?newPassword=${newPassword}`),
 };
 
+export const adminApi = {
+  getUsers: (role?: string) => api.get('/admin/users', { params: role ? { role } : undefined }),
+  createUser: (data: any) => api.post('/admin/users', data),
+  updateUser: (id: number, data: any) => api.put(`/admin/users/${id}`, data),
+  deleteUser: (id: number) => api.delete(`/admin/users/${id}`),
+};
+
 export const courseApi = {
   getAll: () => api.get('/courses'),
   getById: (id: number) => api.get(`/courses/${id}`),

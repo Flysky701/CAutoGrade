@@ -58,7 +58,9 @@ const loadDetail = async () => {
     const subPromises = problems.value.map((p: any) =>
       submissionApi.getMySubmissions().then((r: any) => {
         const subs = (r.data || []).filter((s: any) => s.assignmentId === assignmentId && s.problemId === p.id)
-        if (subs.length) submissions.value[p.id] = subs[0]
+        if (subs.length) {
+          submissions.value = { ...submissions.value, [p.id]: subs[0] }
+        }
       }).catch(() => {})
     )
     await Promise.all(subPromises)

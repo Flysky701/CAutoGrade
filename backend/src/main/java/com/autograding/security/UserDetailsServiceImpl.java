@@ -30,6 +30,14 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                 .last("limit 1"));
 
         if (user == null) {
+            // 允许使用学号/工号登录
+            user = userMapper.selectOne(new LambdaQueryWrapper<User>()
+                    .eq(User::getCode, username)
+                    .eq(User::getDeleted, 0)
+                    .last("limit 1"));
+        }
+
+        if (user == null) {
             throw new UsernameNotFoundException("用户不存在");
         }
 

@@ -41,6 +41,12 @@ public class AnnouncementController {
         return Result.success(announcementService.getAnnouncementsByCourse(courseId));
     }
 
+    @GetMapping("/student/my")
+    public Result<List<Announcement>> getMyAnnouncements() {
+        Long studentId = SecurityUtils.getCurrentUserId();
+        return Result.success(announcementService.getAnnouncementsForStudent(studentId));
+    }
+
     @GetMapping("/{id}")
     public Result<Announcement> getAnnouncementById(@PathVariable Long id) {
         return Result.success(announcementService.getAnnouncementById(id));

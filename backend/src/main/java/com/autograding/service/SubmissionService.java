@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 
 @Service
 public class SubmissionService {
@@ -20,13 +19,16 @@ public class SubmissionService {
     private final SubmissionMapper submissionMapper;
     private final GradingResultMapper gradingResultMapper;
     private final AssignmentMapper assignmentMapper;
+    private final OperationLogService operationLogService;
 
     public SubmissionService(SubmissionMapper submissionMapper,
                             GradingResultMapper gradingResultMapper,
-                            AssignmentMapper assignmentMapper) {
+                            AssignmentMapper assignmentMapper,
+                            OperationLogService operationLogService) {
         this.submissionMapper = submissionMapper;
         this.gradingResultMapper = gradingResultMapper;
         this.assignmentMapper = assignmentMapper;
+        this.operationLogService = operationLogService;
     }
 
     @Transactional
@@ -61,6 +63,9 @@ public class SubmissionService {
         gradingResult.setSubmissionId(submission.getId());
         gradingResult.setGradingStatus(GradingResult.GradingStatus.PENDING);
         gradingResultMapper.insert(gradingResult);
+
+        operationLogService.logOperation(studentId, "SUBMIT_CODE", "SUBMISSION", submission.getId(),
+                "提交代码 assignmentId=" + assignmentId + ", problemId=" + problemId, null);
 
         return submission;
     }
@@ -129,6 +134,8 @@ public class SubmissionService {
             result.setFeedbackJson(feedback);
         }
         gradingResultMapper.updateById(result);
+        operationLogService.logOperation(teacherId, "REVIEW_GRADING", "GRADING_RESULT", gradingId,
+                "教师复核评分, adjustedScore=" + adjustedScore, null);
         return result;
     }
 

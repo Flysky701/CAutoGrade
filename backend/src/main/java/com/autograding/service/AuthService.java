@@ -47,6 +47,16 @@ public class AuthService {
             throw new BusinessException("用户名已存在");
         }
 
+        if (request.getCode() != null && !request.getCode().isBlank()) {
+            User codeExists = userMapper.selectOne(new LambdaQueryWrapper<User>()
+                    .eq(User::getCode, request.getCode())
+                    .eq(User::getDeleted, 0)
+                    .last("limit 1"));
+            if (codeExists != null) {
+                throw new BusinessException("学号/工号已存在");
+            }
+        }
+
         User user = new User();
         user.setUsername(request.getUsername());
         user.setCode(request.getCode());
@@ -65,20 +75,27 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) {
+        String account = request.getUsername();
         try {
             authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
+                    new UsernamePasswordAuthenticationToken(account, request.getPassword())
             );
         } catch (org.springframework.security.core.AuthenticationException e) {
             throw new BusinessException("用户名或密码错误");
         }
 
         User user = userMapper.selectOne(new LambdaQueryWrapper<User>()
-                .eq(User::getUsername, request.getUsername())
+                .eq(User::getUsername, account)
                 .eq(User::getDeleted, 0)
                 .last("limit 1"));
+        if (user == null) {
+            user = userMapper.selectOne(new LambdaQueryWrapper<User>()
+                    .eq(User::getCode, account)
+                    .eq(User::getDeleted, 0)
+                    .last("limit 1"));
+        }
 
-        UserDetails userDetails = userDetailsService.loadUserByUsername(request.getUsername());
+        UserDetails userDetails = userDetailsService.loadUserByUsername(account);
         String token = jwtTokenProvider.generateToken(userDetails);
         return new AuthResponse(token, user.getUsername(), user.getRole().name(), user.getCode());
     }

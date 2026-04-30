@@ -102,7 +102,7 @@ const handleSave = async () => {
     showDialog.value = false
     loadAssignments()
   } catch (e: any) {
-    ElMessage.error(e.response?.data?.msg || '保存失败')
+    ElMessage.error(e?.message || e?.response?.data?.msg || '保存失败')
   } finally {
     saving.value = false
   }
@@ -114,7 +114,7 @@ const handlePublish = async (id: number) => {
     ElMessage.success('发布成功')
     loadAssignments()
   } catch (e: any) {
-    ElMessage.error(e.response?.data?.msg || '发布失败')
+    ElMessage.error(e?.message || e?.response?.data?.msg || '发布失败')
   }
 }
 

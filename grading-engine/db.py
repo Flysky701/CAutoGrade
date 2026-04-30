@@ -112,10 +112,10 @@ class MySQLClient:
                 cur.execute(
                     sql,
                     (
-                        grading_data.get("total_score", 0),
-                        grading_data.get("correctness_score", 0),
-                        grading_data.get("style_score", 0),
-                        grading_data.get("efficiency_score", 0),
+                        grading_data.get("total_score") if grading_data.get("total_score") is not None else 0,
+                        grading_data.get("correctness_score") if grading_data.get("correctness_score") is not None else 0,
+                        grading_data.get("style_score") if grading_data.get("style_score") is not None else 0,
+                        grading_data.get("efficiency_score") if grading_data.get("efficiency_score") is not None else 0,
                         json.dumps(grading_data, ensure_ascii=False),
                         json.dumps(grading_data.get("test_case_results", []), ensure_ascii=False),
                         json.dumps(
@@ -126,7 +126,7 @@ class MySQLClient:
                             },
                             ensure_ascii=False,
                         ),
-                        json.dumps(grading_data, ensure_ascii=False),
+                        grading_data.get("llm_raw_response", "")[:2000],
                         submission_id,
                     ),
                 )
