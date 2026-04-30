@@ -32,6 +32,7 @@ Thumbs.db
 
 # AI assistant configs
 .claude/
+.codebuddy/
 .github/
 CLAUDE.md
 CODEBUDDY.md
@@ -39,3 +40,6 @@ CODEBUDDY.md
 # Logs
 *.log
 logs/
+
+# docs
+docs/
