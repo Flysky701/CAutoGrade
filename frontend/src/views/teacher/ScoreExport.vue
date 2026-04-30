@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElTable, ElTableColumn, ElButton, ElSelect, ElOption, ElTag } from 'element-plus'
 import { Download } from '@element-plus/icons-vue'
-import { assignmentApi, classApi, courseApi } from '@/api'
+import { assignmentApi, classApi, courseApi, submissionApi } from '@/api'
 import * as XLSX from 'xlsx'
 
 const courses = ref<any[]>([])
@@ -26,8 +26,8 @@ const loadScores = async () => {
   if (!selectedAssignmentId.value) return
   loading.value = true
   try {
-    const res = await assignmentApi.getById(selectedAssignmentId.value) as any
-    scores.value = res.data?.submissions || []
+    const res = await submissionApi.getScoresByAssignment(selectedAssignmentId.value) as any
+    scores.value = res.data || []
   } catch {
     scores.value = []
   } finally {

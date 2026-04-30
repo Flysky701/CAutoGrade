@@ -134,7 +134,7 @@ class ClassControllerTest {
         mockMvc.perform(post("/api/classes/join")
                         .param("inviteCode", "INVALID"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(500));
+                .andExpect(jsonPath("$.code").value(400));
     }
 
     @Test

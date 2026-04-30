@@ -92,7 +92,7 @@ const n = computed(() => {
     styleScore:       d.styleScore ?? d.style_score ?? 0,
     efficiencyScore:  d.efficiencyScore ?? d.efficiency_score ?? 0,
     summary:          typeof d.summary === 'string' ? d.summary
-                      : (typeof d.feedbackJson === 'string' ? d.feedbackJson
+                      : (typeof d.feedbackJson === 'string' ? (() => { try { const p = JSON.parse(d.feedbackJson); return p?.summary || d.feedbackJson } catch { return d.feedbackJson } })()
                       : (d.feedbackJson?.summary || '')),
     lineAnnotations:  d.lineAnnotations ?? d.line_annotations ?? [],
     improvements:     d.improvements ?? [],

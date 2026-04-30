@@ -59,8 +59,7 @@ public class ClassService {
         cls.setUpdatedAt(LocalDateTime.now());
         classMapper.insert(cls);
 
-        cls.setCourse(course);
-        ClassResponse response = ClassResponse.fromEntity(cls);
+        ClassResponse response = ClassResponse.fromEntity(cls, course);
         response.setStudentCount(0);
         operationLogService.logOperation(SecurityUtils.getCurrentUserId(), "CREATE_CLASS", "CLASS", cls.getId(),
                 "创建班级: " + cls.getName(), null);
@@ -227,16 +226,16 @@ public class ClassService {
     }
 
     private ClassResponse enrichAndConvert(Class cls) {
-        if (cls.getCourse() == null && cls.getCourseId() != null) {
-            Course course = courseMapper.selectById(cls.getCourseId());
-            cls.setCourse(course);
+        Course course = null;
+        if (cls.getCourseId() != null) {
+            course = courseMapper.selectById(cls.getCourseId());
         }
 
         LambdaQueryWrapper<ClassStudent> csWrapper = new LambdaQueryWrapper<>();
         csWrapper.eq(ClassStudent::getClassId, cls.getId());
         int studentCount = classStudentMapper.selectCount(csWrapper).intValue();
 
-        ClassResponse response = ClassResponse.fromEntity(cls);
+        ClassResponse response = ClassResponse.fromEntity(cls, course);
         response.setStudentCount(studentCount);
         return response;
     }

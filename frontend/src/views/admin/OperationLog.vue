@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { ElTable, ElTableColumn, ElTag } from 'element-plus';
-import api from '../../api/request';
+import { ElMessage, ElTable, ElTableColumn, ElTag } from 'element-plus';
+import { adminApi } from '@/api';
 
 const logs = ref<any[]>([]);
 const loading = ref(false);
@@ -9,10 +9,10 @@ const loading = ref(false);
 onMounted(async () => {
   loading.value = true;
   try {
-    const res: any = await api.get('/admin/logs');
+    const res: any = await adminApi.getLogs(200);
     logs.value = res.data || [];
-  } catch (e) {
-    console.error(e);
+  } catch (e: any) {
+    ElMessage.error(e?.message || e?.response?.data?.msg || '加载日志失败');
   } finally {
     loading.value = false;
   }

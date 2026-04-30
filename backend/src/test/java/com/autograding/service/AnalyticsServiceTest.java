@@ -108,8 +108,6 @@ class AnalyticsServiceTest {
     void getStudentAnalytics_shouldReturnZeroWhenNoSubmissions() {
         when(submissionMapper.selectList(any(LambdaQueryWrapper.class)))
                 .thenReturn(Collections.emptyList());
-        when(gradingResultMapper.selectList(any(LambdaQueryWrapper.class)))
-                .thenReturn(Collections.emptyList());
 
         Map<String, Object> result = analyticsService.getStudentAnalytics(100L);
 
@@ -131,8 +129,8 @@ class AnalyticsServiceTest {
         when(assignmentMapper.selectById(5L)).thenReturn(assignment);
         when(submissionMapper.selectList(any(LambdaQueryWrapper.class)))
                 .thenReturn(List.of(submission));
-        when(gradingResultMapper.selectOne(any(LambdaQueryWrapper.class)))
-                .thenReturn(gradingResult);
+        when(gradingResultMapper.selectList(any(LambdaQueryWrapper.class)))
+                .thenReturn(List.of(gradingResult));
 
         Map<String, Object> result = analyticsService.getAssignmentAnalytics(5L);
 
@@ -147,8 +145,8 @@ class AnalyticsServiceTest {
     void getProblemAnalytics_shouldReturnStats() {
         when(submissionMapper.selectList(any(LambdaQueryWrapper.class)))
                 .thenReturn(List.of(submission));
-        when(gradingResultMapper.selectOne(any(LambdaQueryWrapper.class)))
-                .thenReturn(gradingResult);
+        when(gradingResultMapper.selectList(any(LambdaQueryWrapper.class)))
+                .thenReturn(List.of(gradingResult));
 
         Map<String, Object> result = analyticsService.getProblemAnalytics(20L);
 

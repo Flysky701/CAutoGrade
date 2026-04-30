@@ -84,8 +84,15 @@ public class AuthService {
             throw new BusinessException("用户名或密码错误");
         }
 
+        // 优先通过 UserDetailsService 获取用户信息（与认证流程一致）
+        UserDetails userDetails = userDetailsService.loadUserByUsername(account);
+        if (userDetails == null) {
+            throw new BusinessException("用户名或密码错误");
+        }
+
+        // 查询完整 User 对象获取额外信息（code 字段）
         User user = userMapper.selectOne(new LambdaQueryWrapper<User>()
-                .eq(User::getUsername, account)
+                .eq(User::getUsername, userDetails.getUsername())
                 .eq(User::getDeleted, 0)
                 .last("limit 1"));
         if (user == null) {
@@ -94,8 +101,10 @@ public class AuthService {
                     .eq(User::getDeleted, 0)
                     .last("limit 1"));
         }
+        if (user == null) {
+            throw new BusinessException("用户数据异常，请联系管理员");
+        }
 
-        UserDetails userDetails = userDetailsService.loadUserByUsername(account);
         String token = jwtTokenProvider.generateToken(userDetails);
         return new AuthResponse(token, user.getUsername(), user.getRole().name(), user.getCode());
     }

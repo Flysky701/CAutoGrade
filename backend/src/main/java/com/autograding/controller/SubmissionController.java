@@ -29,7 +29,7 @@ public class SubmissionController {
 
     @PostMapping
     public Result<Submission> submitCode(@RequestBody SubmitCodeRequest request) {
-        Long studentId = SecurityUtils.getCurrentUserId();
+        Long studentId = SecurityUtils.requireCurrentUserId();
         return Result.success(submissionService.submitCode(
                 request.getAssignmentId(),
                 request.getProblemId(),
@@ -50,11 +50,11 @@ public class SubmissionController {
 
     @GetMapping("/student")
     public Result<List<java.util.Map<String, Object>>> getMySubmissions() {
-        Long studentId = SecurityUtils.getCurrentUserId();
+        Long studentId = SecurityUtils.requireCurrentUserId();
         List<Submission> submissions = submissionService.getSubmissionsByStudent(studentId);
         List<java.util.Map<String, Object>> result = new java.util.ArrayList<>();
         for (Submission s : submissions) {
-            java.util.Map<String, Object> map = new java.util.HashMap<>();
+            java.util.Map<String, Object> map = new java.util.LinkedHashMap<>();
             map.put("id", s.getId());
             map.put("assignmentId", s.getAssignmentId());
             map.put("problemId", s.getProblemId());
@@ -79,11 +79,16 @@ public class SubmissionController {
         return Result.success(submissionService.getSubmissionsByAssignment(assignmentId));
     }
 
+    @GetMapping("/scores/assignment/{assignmentId}")
+    public Result<List<java.util.Map<String, Object>>> getScoresByAssignment(@PathVariable Long assignmentId) {
+        return Result.success(submissionService.getScoresByAssignment(assignmentId));
+    }
+
     @PutMapping("/grading/{id}/review")
     public Result<GradingResult> reviewGrading(@PathVariable Long id,
                                                @RequestParam BigDecimal adjustedScore,
                                                @RequestParam(required = false) String feedback) {
-        Long teacherId = SecurityUtils.getCurrentUserId();
+        Long teacherId = SecurityUtils.requireCurrentUserId();
         return Result.success(submissionService.reviewGrading(id, teacherId, adjustedScore, feedback));
     }
 

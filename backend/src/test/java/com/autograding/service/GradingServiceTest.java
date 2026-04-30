@@ -1,9 +1,13 @@
 package com.autograding.service;
 
 import com.autograding.entity.GradingResult;
+import com.autograding.entity.Problem;
 import com.autograding.entity.Submission;
+import com.autograding.entity.User;
 import com.autograding.mapper.GradingResultMapper;
+import com.autograding.mapper.ProblemMapper;
 import com.autograding.mapper.SubmissionMapper;
+import com.autograding.mapper.UserMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -24,6 +29,8 @@ class GradingServiceTest {
 
     @Mock private SubmissionMapper submissionMapper;
     @Mock private GradingResultMapper gradingResultMapper;
+    @Mock private UserMapper userMapper;
+    @Mock private ProblemMapper problemMapper;
 
     @InjectMocks
     private GradingService gradingService;
@@ -31,12 +38,16 @@ class GradingServiceTest {
     private GradingResult pendingResult;
     private GradingResult doneResult;
     private Submission submission;
+    private User student;
+    private Problem problem;
 
     @BeforeEach
     void setUp() {
         submission = new Submission();
         submission.setId(1L);
         submission.setAssignmentId(10L);
+        submission.setStudentId(100L);
+        submission.setProblemId(200L);
 
         pendingResult = new GradingResult();
         pendingResult.setId(1L);
@@ -48,6 +59,14 @@ class GradingServiceTest {
         doneResult.setSubmissionId(2L);
         doneResult.setTotalScore(new BigDecimal("85.00"));
         doneResult.setGradingStatus(GradingResult.GradingStatus.DONE);
+
+        student = new User();
+        student.setId(100L);
+        student.setNickname("测试学生");
+
+        problem = new Problem();
+        problem.setId(200L);
+        problem.setTitle("测试题目");
     }
 
     @Test
@@ -97,11 +116,16 @@ class GradingServiceTest {
     void getUnreviewedGradings_shouldReturnList() {
         when(gradingResultMapper.selectList(any(LambdaQueryWrapper.class)))
                 .thenReturn(List.of(doneResult));
+        when(submissionMapper.selectById(2L)).thenReturn(submission);
+        when(userMapper.selectById(submission.getStudentId())).thenReturn(student);
+        when(problemMapper.selectById(submission.getProblemId())).thenReturn(problem);
 
-        List<GradingResult> results = gradingService.getUnreviewedGradings();
+        List<Map<String, Object>> results = gradingService.getUnreviewedGradings();
 
         assertEquals(1, results.size());
-        assertNull(results.get(0).getReviewedBy());
+        assertEquals(doneResult.getTotalScore(), results.get(0).get("totalScore"));
+        assertEquals("测试学生", results.get(0).get("studentName"));
+        assertEquals("测试题目", results.get(0).get("problemTitle"));
     }
 
     @Test

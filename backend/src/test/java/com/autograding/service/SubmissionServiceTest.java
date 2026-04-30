@@ -6,6 +6,7 @@ import com.autograding.entity.Submission;
 import com.autograding.mapper.AssignmentMapper;
 import com.autograding.mapper.GradingResultMapper;
 import com.autograding.mapper.SubmissionMapper;
+import com.autograding.mapper.UserMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,6 +29,8 @@ class SubmissionServiceTest {
     @Mock private SubmissionMapper submissionMapper;
     @Mock private GradingResultMapper gradingResultMapper;
     @Mock private AssignmentMapper assignmentMapper;
+    @Mock private OperationLogService operationLogService;
+    @Mock private UserMapper userMapper;
 
     @InjectMocks
     private SubmissionService submissionService;

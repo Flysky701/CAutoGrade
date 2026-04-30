@@ -6,11 +6,13 @@ import com.autograding.entity.AssignmentProblem;
 import com.autograding.entity.Class;
 import com.autograding.entity.ClassStudent;
 import com.autograding.entity.Course;
+import com.autograding.entity.Problem;
 import com.autograding.mapper.AssignmentMapper;
 import com.autograding.mapper.AssignmentProblemMapper;
 import com.autograding.mapper.ClassMapper;
 import com.autograding.mapper.ClassStudentMapper;
 import com.autograding.mapper.CourseMapper;
+import com.autograding.mapper.ProblemMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.springframework.stereotype.Service;
@@ -18,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class AssignmentService {
@@ -27,17 +31,20 @@ public class AssignmentService {
     private final CourseMapper courseMapper;
     private final ClassMapper classMapper;
     private final ClassStudentMapper classStudentMapper;
+    private final ProblemMapper problemMapper;
 
     public AssignmentService(AssignmentMapper assignmentMapper,
                             AssignmentProblemMapper assignmentProblemMapper,
                             CourseMapper courseMapper,
                             ClassMapper classMapper,
-                            ClassStudentMapper classStudentMapper) {
+                            ClassStudentMapper classStudentMapper,
+                            ProblemMapper problemMapper) {
         this.assignmentMapper = assignmentMapper;
         this.assignmentProblemMapper = assignmentProblemMapper;
         this.courseMapper = courseMapper;
         this.classMapper = classMapper;
         this.classStudentMapper = classStudentMapper;
+        this.problemMapper = problemMapper;
     }
 
     @Transactional
@@ -136,6 +143,36 @@ public class AssignmentService {
         wrapper.eq(AssignmentProblem::getAssignmentId, assignmentId)
                .orderByAsc(AssignmentProblem::getSortOrder);
         return assignmentProblemMapper.selectList(wrapper);
+    }
+
+    public List<Map<String, Object>> getProblemDetails(Long assignmentId) {
+        List<AssignmentProblem> aps = getAssignmentProblems(assignmentId);
+        if (aps.isEmpty()) {
+            return List.of();
+        }
+        List<Long> problemIds = aps.stream().map(AssignmentProblem::getProblemId).toList();
+        Map<Long, Problem> problemMap = problemMapper.selectBatchIds(problemIds)
+                .stream().collect(Collectors.toMap(Problem::getId, p -> p, (a, b) -> a));
+
+        return aps.stream().map(ap -> {
+            Problem p = problemMap.get(ap.getProblemId());
+            Map<String, Object> item = new java.util.LinkedHashMap<>();
+            item.put("id", ap.getId());
+            item.put("assignmentId", ap.getAssignmentId());
+            item.put("problemId", ap.getProblemId());
+            item.put("sortOrder", ap.getSortOrder());
+            if (p != null) {
+                item.put("title", p.getTitle());
+                item.put("description", p.getDescription());
+                item.put("difficulty", p.getDifficulty());
+                item.put("knowledgeTags", p.getKnowledgeTags());
+                item.put("inputDesc", p.getInputDesc());
+                item.put("outputDesc", p.getOutputDesc());
+                item.put("timeLimitMs", p.getTimeLimitMs());
+                item.put("memoryLimitKb", p.getMemoryLimitKb());
+            }
+            return item;
+        }).toList();
     }
 
     @Transactional

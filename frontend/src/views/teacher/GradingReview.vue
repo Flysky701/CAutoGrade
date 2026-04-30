@@ -23,15 +23,14 @@ const loadAssignments = async () => {
 }
 
 const loadUnreviewed = async () => {
-  if (!selectedAssignmentId.value) {
-    unreviewedList.value = []
-    return
-  }
   loading.value = true
   try {
-    const res = await gradingApi.getByAssignment(selectedAssignmentId.value)
-    const data = (res as any).data || []
-    unreviewedList.value = data.filter((g: any) => g.gradingStatus !== 'DONE' || g.totalScore === null)
+    const res = await gradingApi.getUnreviewed()
+    let data = (res as any).data || []
+    if (selectedAssignmentId.value) {
+      data = data.filter((g: any) => g.assignmentId === selectedAssignmentId.value)
+    }
+    unreviewedList.value = data
   } catch {
     ElMessage.error('加载批阅列表失败')
   } finally {
@@ -41,9 +40,10 @@ const loadUnreviewed = async () => {
 
 const openDetail = async (row: any) => {
   try {
+    const subId = row.submissionId
     const [subRes, gradRes] = await Promise.all([
-      submissionApi.getById(row.submissionId || row.id),
-      submissionApi.getGradingResult(row.submissionId || row.id),
+      submissionApi.getById(subId),
+      submissionApi.getGradingResult(subId),
     ])
     currentDetail.value = {
       submission: (subRes as any).data,
@@ -97,7 +97,10 @@ const scoreColor = (score: number) => {
   return '#f56c6c'
 }
 
-onMounted(loadAssignments)
+onMounted(() => {
+  loadAssignments()
+  loadUnreviewed()
+})
 </script>
 
 <template>
@@ -175,9 +178,7 @@ onMounted(loadAssignments)
         <div style="margin-bottom:16px" v-if="currentDetail.grading.feedbackJson">
           <h4 style="margin-bottom:8px">AI 评语</h4>
           <p style="color:#606266;line-height:1.6">
-            {{ typeof currentDetail.grading.feedbackJson === 'string'
-                ? currentDetail.grading.feedbackJson
-                : currentDetail.grading.feedbackJson?.summary || JSON.stringify(currentDetail.grading.feedbackJson) }}
+            {{ (() => { const fj = currentDetail.grading.feedbackJson; if (typeof fj === 'string') { try { const p = JSON.parse(fj); return p?.summary || fj } catch { return fj } } return fj?.summary || JSON.stringify(fj) })() }}
           </p>
         </div>
 

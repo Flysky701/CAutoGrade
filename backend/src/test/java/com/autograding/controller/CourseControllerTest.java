@@ -69,7 +69,7 @@ class CourseControllerTest {
             new org.springframework.security.core.userdetails.User("teacher1", "", List.of(new SimpleGrantedAuthority("ROLE_TEACHER"))),
             null);
         SecurityContextHolder.getContext().setAuthentication(auth);
-        when(userMapper.selectById(1L)).thenReturn(teacher);
+        when(userMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(teacher);
     }
 
     @AfterEach
@@ -124,7 +124,7 @@ class CourseControllerTest {
 
         mockMvc.perform(get("/api/courses/99"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(500));
+                .andExpect(jsonPath("$.code").value(400));
     }
 
     @Test

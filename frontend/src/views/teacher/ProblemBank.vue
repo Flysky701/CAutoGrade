@@ -25,6 +25,7 @@ const savingTestCase = ref(false)
 
 const problemTab = ref('mine')
 const publicProblems = ref<any[]>([])
+const publicLoading = ref(false)
 
 const loadProblems = async () => {
   loading.value = true
@@ -38,18 +39,22 @@ const loadProblems = async () => {
 }
 
 const loadPublicProblems = async () => {
-  loading.value = true
+  publicLoading.value = true
   try {
     publicProblems.value = (await problemApi.getPublic() as any).data || []
   } catch {
     ElMessage.error('加载公共题库失败')
   } finally {
-    loading.value = false
+    publicLoading.value = false
   }
 }
 
 const displayedProblems = computed(() => {
-  return problemTab.value === 'public' ? publicProblems : problems.value
+  return problemTab.value === 'public' ? publicProblems.value : problems.value
+})
+
+const isLoading = computed(() => {
+  return problemTab.value === 'public' ? publicLoading.value : loading.value
 })
 
 const openCreateProblem = () => {
@@ -66,6 +71,15 @@ const parseTags = (tags: any): string => {
     return tags
   }
   return ''
+}
+
+const parseTagList = (tags: any): string[] => {
+  if (!tags) return []
+  if (Array.isArray(tags)) return tags
+  if (typeof tags === 'string') {
+    try { const arr = JSON.parse(tags); if (Array.isArray(arr)) return arr } catch { return [tags] }
+  }
+  return []
 }
 
 const openEditProblem = (row: any) => {
@@ -156,7 +170,11 @@ const openEditTestCase = (row: any) => {
 const handleSaveTestCase = async () => {
   savingTestCase.value = true
   try {
-    const data = { ...testCaseForm.value, problemId: currentProblemId.value }
+    const data = {
+      ...testCaseForm.value,
+      problemId: currentProblemId.value,
+      isHidden: testCaseForm.value.isHidden ? 1 : 0,
+    }
     if (editingTestCaseId.value) {
       await testCaseApi.update(editingTestCaseId.value, data)
       ElMessage.success('更新成功')
@@ -193,12 +211,12 @@ onMounted(() => { loadProblems(); loadPublicProblems() })
       <el-button v-if="problemTab === 'mine'" type="primary" @click="openCreateProblem">创建题目</el-button>
     </div>
 
-    <el-tabs v-model="problemTab" style="margin-bottom:12px" @tab-change="(tab:any) => tab === 'public' && !publicProblems.length && loadPublicProblems()">
+    <el-tabs v-model="problemTab" style="margin-bottom:12px" @tab-change="(tab:any) => { if (tab === 'public') loadPublicProblems() }">
       <el-tab-pane label="我的题目" name="mine" />
       <el-tab-pane label="公共题库" name="public" />
     </el-tabs>
 
-    <el-table :data="displayedProblems" stripe v-loading="loading">
+    <el-table :data="displayedProblems" stripe v-loading="isLoading">
       <el-table-column prop="title" label="标题" min-width="200" />
       <el-table-column prop="difficulty" label="难度" width="140">
         <template #default="{ row }">
@@ -209,7 +227,7 @@ onMounted(() => { loadProblems(); loadPublicProblems() })
       </el-table-column>
       <el-table-column prop="knowledgeTags" label="知识点" min-width="180">
         <template #default="{ row }">
-          <el-tag v-for="tag in row.knowledgeTags" :key="tag" size="small" style="margin:2px">{{ tag }}</el-tag>
+          <el-tag v-for="tag in parseTagList(row.knowledgeTags)" :key="tag" size="small" style="margin:2px">{{ tag }}</el-tag>
         </template>
       </el-table-column>
       <el-table-column prop="isPublic" label="公开" width="80">

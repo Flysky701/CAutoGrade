@@ -26,7 +26,9 @@ public class SecurityUtils {
 
     public static Long getCurrentUserId() {
         String username = getCurrentUsername();
-        if (username == null) return null;
+        if (username == null || userMapper == null) {
+            return null;
+        }
         User user = userMapper.selectOne(new LambdaQueryWrapper<User>()
                 .eq(User::getUsername, username)
                 .eq(User::getDeleted, 0)
@@ -34,9 +36,19 @@ public class SecurityUtils {
         return user != null ? user.getId() : null;
     }
 
+    public static Long requireCurrentUserId() {
+        Long id = getCurrentUserId();
+        if (id == null) {
+            throw new com.autograding.common.BusinessException(401, "用户未登录");
+        }
+        return id;
+    }
+
     public static User getCurrentUser() {
         String username = getCurrentUsername();
-        if (username == null) return null;
+        if (username == null || userMapper == null) {
+            return null;
+        }
         return userMapper.selectOne(new LambdaQueryWrapper<User>()
                 .eq(User::getUsername, username)
                 .eq(User::getDeleted, 0)

@@ -40,6 +40,8 @@ export const adminApi = {
   createUser: (data: any) => api.post('/admin/users', data),
   updateUser: (id: number, data: any) => api.put(`/admin/users/${id}`, data),
   deleteUser: (id: number) => api.delete(`/admin/users/${id}`),
+  getLogs: (limit?: number) => api.get('/admin/logs', { params: limit ? { limit } : undefined }),
+  getLogsByUser: (userId: number, limit?: number) => api.get(`/admin/logs/user/${userId}`, { params: limit ? { limit } : undefined }),
 };
 
 export const courseApi = {
@@ -56,12 +58,13 @@ export const classApi = {
   getMyClasses: () => api.get('/classes/teacher'),
   getMyClassesAsStudent: () => api.get('/classes/student'),
   create: (data: any) => api.post('/classes', data),
-  join: (inviteCode: string) => api.post(`/classes/join?inviteCode=${inviteCode}`),
+  join: (inviteCode: string) => api.post('/classes/join', null, { params: { inviteCode } }),
   getClassStudents: (classId: number) => api.get(`/classes/${classId}/students`),
   addStudent: (classId: number, studentId: number) =>
     api.post(`/classes/${classId}/students/${studentId}`),
   removeStudent: (classId: number, studentId: number) =>
     api.delete(`/classes/${classId}/students/${studentId}`),
+  delete: (classId: number) => api.delete(`/classes/${classId}`),
 };
 
 export const assignmentApi = {
@@ -70,6 +73,7 @@ export const assignmentApi = {
   getStudentAssignments: () => api.get('/assignments/student'),
   getById: (id: number) => api.get(`/assignments/${id}`),
   getProblems: (id: number) => api.get(`/assignments/${id}/problems`),
+  getProblemDetails: (id: number) => api.get(`/assignments/${id}/problem-details`),
   create: (data: any) => api.post('/assignments', data),
   update: (id: number, data: any) => api.put(`/assignments/${id}`, data),
   publish: (id: number) => api.post(`/assignments/${id}/publish`),
@@ -100,6 +104,7 @@ export const submissionApi = {
   getGradingResult: (id: number) => api.get(`/submissions/${id}/grading`),
   getMySubmissions: () => api.get('/submissions/student'),
   getByAssignment: (assignmentId: number) => api.get(`/submissions/assignment/${assignmentId}`),
+  getScoresByAssignment: (assignmentId: number) => api.get(`/submissions/scores/assignment/${assignmentId}`),
 };
 
 export const notificationApi = {
@@ -130,5 +135,5 @@ export const gradingApi = {
   getByAssignment: (assignmentId: number) => api.get(`/gradings/assignment/${assignmentId}`),
   getUnreviewed: () => api.get('/gradings/unreviewed'),
   review: (id: number, adjustedScore: number, feedback?: string) =>
-    api.put(`/submissions/grading/${id}/review?adjustedScore=${adjustedScore}&feedback=${feedback || ''}`),
+    api.put(`/submissions/grading/${id}/review`, null, { params: { adjustedScore, feedback: feedback || '' } }),
 };

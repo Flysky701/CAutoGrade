@@ -117,7 +117,7 @@ onMounted(loadMeta)
       <el-row :gutter="20" style="margin-bottom:20px">
         <el-col :span="6">
           <el-card shadow="hover">
-            <el-statistic title="平均分" :value="analyticsData.avgScore || 0" suffix="分" />
+            <el-statistic title="平均分" :value="analyticsData.averageScore || 0" suffix="分" />
           </el-card>
         </el-col>
         <el-col :span="6">

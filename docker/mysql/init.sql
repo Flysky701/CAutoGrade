@@ -176,6 +176,7 @@ CREATE TABLE `grading_result` (
   `grading_status` ENUM('PENDING', 'PROCESSING', 'DONE', 'FAILED') DEFAULT 'PENDING' COMMENT '批阅状态',
   `reviewed_by` BIGINT COMMENT '负责审核复核的教师ID',
   `human_adjusted_score` DECIMAL(5,2) COMMENT '人工复核后的修正分数',
+  `review_feedback` TEXT COMMENT '教师审核评语',
   `reviewed_at` DATETIME COMMENT '教师复核时间',
   `graded_at` DATETIME COMMENT '自动批阅完成时间',
   CONSTRAINT `fk_gr_submission` FOREIGN KEY (`submission_id`) REFERENCES `submission` (`id`)
@@ -233,6 +234,15 @@ CREATE TABLE `operation_log` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='操作日志表';
 
 -- ==========================================================
+-- 系统配置表 (System_Config)
+-- ==========================================================
+CREATE TABLE `system_config` (
+  `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+  `config_key` VARCHAR(50) NOT NULL UNIQUE COMMENT '配置键（如 llm, sandbox, scoring）',
+  `config_value` JSON NOT NULL COMMENT '配置值（JSON格式）',
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='系统配置表';
+
 -- 插入系统默认初始数据
 -- ==========================================================
 -- 插入默认用户 (密码均为 123456)
@@ -240,3 +250,29 @@ INSERT INTO `user` (`username`, `password_hash`, `code`, `nickname`, `role`) VAL
   ('admin',   '$2a$10$rksYpyhDhQWYv0hbD.fsNOOhynKOw/4TBFHb/NSgZsotML4DuRKdy', 'ADMIN001', '系统管理员', 'ADMIN'),
   ('teacher', '$2a$10$rksYpyhDhQWYv0hbD.fsNOOhynKOw/4TBFHb/NSgZsotML4DuRKdy', 'T001',     '张老师',     'TEACHER'),
   ('student', '$2a$10$rksYpyhDhQWYv0hbD.fsNOOhynKOw/4TBFHb/NSgZsotML4DuRKdy', 'S001',     '小明',       'STUDENT');
+
+-- ==========================================================
+-- 增量迁移：为已有数据库补齐新字段
+-- ==========================================================
+-- 安全的 ALTER：如果列已存在则忽略错误
+SET @dbname = DATABASE();
+SET @tablename = 'grading_result';
+SET @columnname = 'review_feedback';
+SET @preparedStatement = (SELECT IF(
+  (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = @tablename AND COLUMN_NAME = @columnname) > 0,
+  'SELECT 1',
+  'ALTER TABLE grading_result ADD COLUMN review_feedback TEXT COMMENT ''教师审核评语'' AFTER human_adjusted_score'
+));
+PREPARE alterIfNotExists FROM @preparedStatement;
+EXECUTE alterIfNotExists;
+DEALLOCATE PREPARE alterIfNotExists;
+
+-- 安全的 CREATE TABLE：如果 system_config 表不存在则创建
+SET @preparedStatement = (SELECT IF(
+  (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'system_config') > 0,
+  'SELECT 1',
+  'CREATE TABLE `system_config` (`id` BIGINT AUTO_INCREMENT PRIMARY KEY, `config_key` VARCHAR(50) NOT NULL UNIQUE COMMENT ''配置键'', `config_value` JSON NOT NULL COMMENT ''配置值'', `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT ''更新时间'') ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT=''系统配置表'''
+));
+PREPARE createIfNotExists FROM @preparedStatement;
+EXECUTE createIfNotExists;
+DEALLOCATE PREPARE createIfNotExists;

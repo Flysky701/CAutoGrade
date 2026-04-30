@@ -5,16 +5,18 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 @Data
-@TableName("assignment_problem")
-public class AssignmentProblem {
+@TableName("system_config")
+public class SystemConfig {
 
     @TableId(type = IdType.AUTO)
     private Long id;
 
-    private Long assignmentId;
+    private String configKey;
 
-    private Long problemId;
+    private String configValue;
 
-    private Integer sortOrder = 0;
+    private LocalDateTime updatedAt;
 }

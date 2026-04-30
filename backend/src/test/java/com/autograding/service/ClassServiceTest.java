@@ -12,12 +12,16 @@ import com.autograding.mapper.ClassStudentMapper;
 import com.autograding.mapper.CourseMapper;
 import com.autograding.mapper.UserMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
 
@@ -32,6 +36,7 @@ class ClassServiceTest {
     @Mock private ClassStudentMapper classStudentMapper;
     @Mock private CourseMapper courseMapper;
     @Mock private UserMapper userMapper;
+    @Mock private OperationLogService operationLogService;
 
     @InjectMocks
     private ClassService classService;
@@ -39,10 +44,17 @@ class ClassServiceTest {
     private Course course;
     private Class cls;
     private User student;
+    private User teacher;
     private Long teacherId = 1L;
 
     @BeforeEach
     void setUp() {
+        teacher = new User();
+        teacher.setId(1L);
+        teacher.setUsername("teacher1");
+        teacher.setRole(User.Role.TEACHER);
+        teacher.setDeleted(0);
+
         course = new Course();
         course.setId(10L);
         course.setName("C语言程序设计");
@@ -61,11 +73,23 @@ class ClassServiceTest {
         student.setUsername("student1");
         student.setNickname("小明");
         student.setRole(User.Role.STUDENT);
+        student.setDeleted(0);
+
+        var auth = new UsernamePasswordAuthenticationToken(
+            new org.springframework.security.core.userdetails.User("teacher1", "", List.of(new SimpleGrantedAuthority("ROLE_TEACHER"))),
+            null);
+        SecurityContextHolder.getContext().setAuthentication(auth);
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
     }
 
     @Test
     void createClass_shouldSucceed() {
         when(courseMapper.selectById(10L)).thenReturn(course);
+        when(userMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(teacher);
         when(classMapper.insert(any(Class.class))).thenReturn(1);
 
         ClassCreateRequest request = new ClassCreateRequest();
@@ -107,9 +131,9 @@ class ClassServiceTest {
 
     @Test
     void getClassesByCourse_shouldReturnList() {
-        cls.setCourse(course);
         when(classMapper.selectList(any(LambdaQueryWrapper.class)))
                 .thenReturn(List.of(cls));
+        when(courseMapper.selectById(10L)).thenReturn(course);
         when(classStudentMapper.selectCount(any(LambdaQueryWrapper.class))).thenReturn(5L);
 
         List<ClassResponse> results = classService.getClassesByCourse(10L);
@@ -121,8 +145,8 @@ class ClassServiceTest {
 
     @Test
     void getClassById_shouldSucceed() {
-        cls.setCourse(course);
         when(classMapper.selectById(100L)).thenReturn(cls);
+        when(courseMapper.selectById(10L)).thenReturn(course);
         when(classStudentMapper.selectCount(any(LambdaQueryWrapper.class))).thenReturn(3L);
 
         ClassResponse response = classService.getClassById(100L);
@@ -143,8 +167,7 @@ class ClassServiceTest {
     void joinClassByCode_shouldSucceed() {
         when(classMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(cls);
         when(classStudentMapper.insert(any(ClassStudent.class))).thenReturn(1);
-        cls.setCourse(course);
-        // selectCount called twice: 1st=duplicate check (0L=not joined), 2nd=enrichAndConvert (1L)
+        when(courseMapper.selectById(10L)).thenReturn(course);
         when(classStudentMapper.selectCount(any(LambdaQueryWrapper.class)))
                 .thenReturn(0L, 1L);
 
@@ -174,6 +197,7 @@ class ClassServiceTest {
     @Test
     void addStudentToClass_shouldSucceed() {
         when(classMapper.selectById(100L)).thenReturn(cls);
+        when(userMapper.selectById(5L)).thenReturn(student);
         when(classStudentMapper.selectCount(any(LambdaQueryWrapper.class))).thenReturn(0L);
         when(classStudentMapper.insert(any(ClassStudent.class))).thenReturn(1);
 
@@ -184,6 +208,7 @@ class ClassServiceTest {
     @Test
     void addStudentToClass_shouldThrowWhenAlreadyInClass() {
         when(classMapper.selectById(100L)).thenReturn(cls);
+        when(userMapper.selectById(5L)).thenReturn(student);
         when(classStudentMapper.selectCount(any(LambdaQueryWrapper.class))).thenReturn(1L);
 
         assertThrows(BusinessException.class,

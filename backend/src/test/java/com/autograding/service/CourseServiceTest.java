@@ -8,6 +8,7 @@ import com.autograding.entity.User;
 import com.autograding.mapper.CourseMapper;
 import com.autograding.mapper.UserMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,11 +16,15 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -27,6 +32,7 @@ class CourseServiceTest {
 
     @Mock private CourseMapper courseMapper;
     @Mock private UserMapper userMapper;
+    @Mock private OperationLogService operationLogService;
 
     @InjectMocks
     private CourseService courseService;
@@ -42,6 +48,7 @@ class CourseServiceTest {
         teacher.setUsername("teacher1");
         teacher.setNickname("张老师");
         teacher.setRole(User.Role.TEACHER);
+        teacher.setDeleted(0);
 
         course = new Course();
         course.setId(10L);
@@ -56,11 +63,22 @@ class CourseServiceTest {
         createRequest.setName("C语言程序设计");
         createRequest.setDescription("2026春季学期");
         createRequest.setSemester("2026-SPRING");
+
+        var auth = new UsernamePasswordAuthenticationToken(
+            new org.springframework.security.core.userdetails.User("teacher1", "", List.of(new SimpleGrantedAuthority("ROLE_TEACHER"))),
+            null);
+        SecurityContextHolder.getContext().setAuthentication(auth);
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
     }
 
     @Test
     void createCourse_shouldSucceed() {
         when(userMapper.selectById(1L)).thenReturn(teacher);
+        when(userMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(teacher);
         when(courseMapper.insert(any(Course.class))).thenReturn(1);
 
         CourseResponse response = courseService.createCourse(createRequest, 1L);
@@ -94,9 +112,9 @@ class CourseServiceTest {
 
     @Test
     void getCoursesByTeacher_shouldReturnList() {
-        course.setTeacher(teacher);
         when(courseMapper.selectList(any(LambdaQueryWrapper.class)))
                 .thenReturn(List.of(course));
+        when(userMapper.selectById(1L)).thenReturn(teacher);
 
         List<CourseResponse> results = courseService.getCoursesByTeacher(1L);
 
@@ -106,8 +124,8 @@ class CourseServiceTest {
 
     @Test
     void getCourseById_shouldReturnCourse() {
-        course.setTeacher(teacher);
         when(courseMapper.selectById(10L)).thenReturn(course);
+        when(userMapper.selectById(1L)).thenReturn(teacher);
 
         CourseResponse response = courseService.getCourseById(10L);
 

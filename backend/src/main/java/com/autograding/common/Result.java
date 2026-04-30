@@ -23,4 +23,12 @@ public class Result<T> {
         m.setData(null);
         return m;
     }
+
+    public static <T> Result<T> error(int code, String msg) {
+        Result<T> m = new Result<>();
+        m.setCode(code);
+        m.setMsg(msg);
+        m.setData(null);
+        return m;
+    }
 }

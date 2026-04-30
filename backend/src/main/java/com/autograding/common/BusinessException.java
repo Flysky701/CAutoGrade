@@ -2,7 +2,7 @@ package com.autograding.common;
 
 public class BusinessException extends RuntimeException {
 
-    private Integer code = 500;
+    private Integer code = 400;
 
     public BusinessException(String message) {
         super(message);

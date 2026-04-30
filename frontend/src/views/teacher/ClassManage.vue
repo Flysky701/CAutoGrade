@@ -51,13 +51,10 @@ const handleCreate = async () => {
   }
 }
 
-const toggleStudents = async (classId: number) => {
-  if (expandedClass.value === classId) {
-    expandedClass.value = null
-    return
-  }
-  expandedClass.value = classId
-  if (!classStudents.value[classId]) {
+const handleExpandChange = async (row: any, expandedRows: any[]) => {
+  const classId = row.id
+  const isExpanded = expandedRows.some((r: any) => r.id === classId)
+  if (isExpanded && !classStudents.value[classId]) {
     try {
       const res = await classApi.getClassStudents(classId)
       classStudents.value = { ...classStudents.value, [classId]: (res as any).data || [] }
@@ -109,7 +106,6 @@ const handleRemoveStudent = async (classId: number, studentId: number, name: str
     ElMessage.success('已移除')
     const res = await classApi.getClassStudents(classId)
     classStudents.value = { ...classStudents.value, [classId]: (res as any).data || [] }
-    expandedClass.value = null
   } catch { /* cancelled */ }
 }
 
@@ -125,6 +121,16 @@ const openAddStudent = (classId: number) => {
   showAddStudentDialog.value = true
 }
 
+const handleDeleteClass = async (classId: number) => {
+  try {
+    await classApi.delete(classId)
+    ElMessage.success('已删除')
+    loadClasses()
+  } catch {
+    ElMessage.error('删除失败')
+  }
+}
+
 onMounted(loadClasses)
 </script>
 
@@ -135,7 +141,7 @@ onMounted(loadClasses)
       <el-button type="primary" @click="showCreateDialog = true">创建班级</el-button>
     </div>
 
-    <el-table :data="classes" stripe v-loading="loading" row-key="id">
+    <el-table :data="classes" stripe v-loading="loading" row-key="id" @expand-change="handleExpandChange">
       <el-table-column type="expand">
         <template #default="{ row }">
           <div style="padding: 12px 48px">
@@ -171,13 +177,6 @@ onMounted(loadClasses)
         </template>
       </el-table-column>
       <el-table-column prop="studentCount" label="学生数" width="100" />
-      <el-table-column label="操作" width="120">
-        <template #default="{ row }">
-          <el-button size="small" @click="toggleStudents(row.id)">
-            {{ expandedClass === row.id ? '收起' : '查看学生' }}
-          </el-button>
-        </template>
-      </el-table-column>
     </el-table>
 
     <el-dialog v-model="showCreateDialog" title="创建班级" width="480px">

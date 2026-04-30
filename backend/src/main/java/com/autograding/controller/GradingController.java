@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/gradings")
@@ -31,7 +32,7 @@ public class GradingController {
     }
 
     @GetMapping("/unreviewed")
-    public Result<List<GradingResult>> getUnreviewedGradings() {
+    public Result<List<Map<String, Object>>> getUnreviewedGradings() {
         return Result.success(gradingService.getUnreviewedGradings());
     }
 

@@ -4,14 +4,20 @@ import com.autograding.common.BusinessException;
 import com.autograding.entity.Assignment;
 import com.autograding.entity.GradingResult;
 import com.autograding.entity.Submission;
+import com.autograding.entity.User;
 import com.autograding.mapper.AssignmentMapper;
 import com.autograding.mapper.GradingResultMapper;
 import com.autograding.mapper.SubmissionMapper;
+import com.autograding.mapper.UserMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class SubmissionService {
@@ -20,15 +26,18 @@ public class SubmissionService {
     private final GradingResultMapper gradingResultMapper;
     private final AssignmentMapper assignmentMapper;
     private final OperationLogService operationLogService;
+    private final UserMapper userMapper;
 
     public SubmissionService(SubmissionMapper submissionMapper,
                             GradingResultMapper gradingResultMapper,
                             AssignmentMapper assignmentMapper,
-                            OperationLogService operationLogService) {
+                            OperationLogService operationLogService,
+                            UserMapper userMapper) {
         this.submissionMapper = submissionMapper;
         this.gradingResultMapper = gradingResultMapper;
         this.assignmentMapper = assignmentMapper;
         this.operationLogService = operationLogService;
+        this.userMapper = userMapper;
     }
 
     @Transactional
@@ -80,7 +89,8 @@ public class SubmissionService {
 
     public GradingResult getGradingResultBySubmission(Long submissionId) {
         LambdaQueryWrapper<GradingResult> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(GradingResult::getSubmissionId, submissionId);
+        wrapper.eq(GradingResult::getSubmissionId, submissionId)
+               .last("limit 1");
         return gradingResultMapper.selectOne(wrapper);
     }
 
@@ -94,7 +104,8 @@ public class SubmissionService {
 
     public void updateGradingResult(Long submissionId, GradingResult result) {
         LambdaQueryWrapper<GradingResult> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(GradingResult::getSubmissionId, submissionId);
+        wrapper.eq(GradingResult::getSubmissionId, submissionId)
+               .last("limit 1");
         GradingResult existing = gradingResultMapper.selectOne(wrapper);
         if (existing != null) {
             existing.setTotalScore(result.getTotalScore());
@@ -113,7 +124,8 @@ public class SubmissionService {
 
     public void updateGradingStatus(Long submissionId, GradingResult.GradingStatus status) {
         LambdaQueryWrapper<GradingResult> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(GradingResult::getSubmissionId, submissionId);
+        wrapper.eq(GradingResult::getSubmissionId, submissionId)
+               .last("limit 1");
         GradingResult existing = gradingResultMapper.selectOne(wrapper);
         if (existing != null) {
             existing.setGradingStatus(status);
@@ -131,9 +143,12 @@ public class SubmissionService {
         result.setHumanAdjustedScore(adjustedScore);
         result.setReviewedAt(LocalDateTime.now());
         if (feedback != null) {
-            result.setFeedbackJson(feedback);
+            result.setReviewFeedback(feedback);
         }
-        gradingResultMapper.updateById(result);
+        int rows = gradingResultMapper.updateById(result);
+        if (rows == 0) {
+            throw new BusinessException("更新批改结果失败");
+        }
         operationLogService.logOperation(teacherId, "REVIEW_GRADING", "GRADING_RESULT", gradingId,
                 "教师复核评分, adjustedScore=" + adjustedScore, null);
         return result;
@@ -153,5 +168,41 @@ public class SubmissionService {
                .eq(Submission::getDeleted, 0)
                .orderByDesc(Submission::getSubmittedAt);
         return submissionMapper.selectList(wrapper);
+    }
+
+    public List<Map<String, Object>> getScoresByAssignment(Long assignmentId) {
+        List<Submission> submissions = getSubmissionsByAssignment(assignmentId);
+        List<Map<String, Object>> result = new ArrayList<>();
+
+        for (Submission s : submissions) {
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("submissionId", s.getId());
+            item.put("assignmentId", s.getAssignmentId());
+            item.put("problemId", s.getProblemId());
+            item.put("studentId", s.getStudentId());
+            item.put("submittedAt", s.getSubmittedAt());
+            item.put("isLate", s.getIsLate());
+            item.put("submitCount", s.getSubmitCount());
+
+            if (s.getStudentId() != null) {
+                User student = userMapper.selectById(s.getStudentId());
+                if (student != null) {
+                    item.put("studentName", student.getNickname());
+                    item.put("username", student.getUsername());
+                }
+            }
+
+            GradingResult gr = getGradingResultBySubmission(s.getId());
+            if (gr != null) {
+                item.put("totalScore", gr.getTotalScore());
+                item.put("correctnessScore", gr.getCorrectnessScore());
+                item.put("styleScore", gr.getStyleScore());
+                item.put("efficiencyScore", gr.getEfficiencyScore());
+                item.put("gradingStatus", gr.getGradingStatus() != null ? gr.getGradingStatus().name() : null);
+                item.put("humanAdjustedScore", gr.getHumanAdjustedScore());
+            }
+            result.add(item);
+        }
+        return result;
     }
 }

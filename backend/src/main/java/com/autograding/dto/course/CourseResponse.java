@@ -1,6 +1,7 @@
 package com.autograding.dto.course;
 
 import com.autograding.entity.Course;
+import com.autograding.entity.User;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -18,7 +19,7 @@ public class CourseResponse {
     private Course.Status status;
     private LocalDateTime createdAt;
 
-    public static CourseResponse fromEntity(Course course) {
+    public static CourseResponse fromEntity(Course course, User teacher) {
         CourseResponse response = new CourseResponse();
         response.setId(course.getId());
         response.setName(course.getName());
@@ -29,8 +30,8 @@ public class CourseResponse {
         response.setInviteCode(course.getInviteCode());
         response.setStatus(course.getStatus());
         response.setCreatedAt(course.getCreatedAt());
-        if (course.getTeacher() != null) {
-            response.setTeacherName(course.getTeacher().getNickname());
+        if (teacher != null) {
+            response.setTeacherName(teacher.getNickname());
         }
         return response;
     }

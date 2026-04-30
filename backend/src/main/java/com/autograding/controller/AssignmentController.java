@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/assignments")
@@ -72,6 +73,11 @@ public class AssignmentController {
     @GetMapping("/{id}/problems")
     public Result<List<AssignmentProblem>> getAssignmentProblems(@PathVariable Long id) {
         return Result.success(assignmentService.getAssignmentProblems(id));
+    }
+
+    @GetMapping("/{id}/problem-details")
+    public Result<List<Map<String, Object>>> getProblemDetails(@PathVariable Long id) {
+        return Result.success(assignmentService.getProblemDetails(id));
     }
 
     @PutMapping("/{id}")

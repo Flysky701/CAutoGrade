@@ -53,8 +53,8 @@ cd ..
 
 echo.
 echo [4/4] 重新部署容器...
-echo   → 清除Docker构建缓存并重建...
-docker-compose build --no-cache backend grading-worker
+echo   → 构建后端与批改引擎镜像(利用层缓存加速)...
+docker-compose build backend grading-worker
 if %errorlevel% neq 0 (
     echo [错误] Docker构建失败
     pause

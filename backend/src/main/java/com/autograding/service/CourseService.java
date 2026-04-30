@@ -47,10 +47,9 @@ public class CourseService {
         course.setUpdatedAt(LocalDateTime.now());
         courseMapper.insert(course);
 
-        course.setTeacher(teacher);
         operationLogService.logOperation(SecurityUtils.getCurrentUserId(), "CREATE_COURSE", "COURSE", course.getId(),
                 "创建课程: " + course.getName(), null);
-        return CourseResponse.fromEntity(course);
+        return CourseResponse.fromEntity(course, teacher);
     }
 
     private String generateInviteCode() {
@@ -132,10 +131,10 @@ public class CourseService {
     }
 
     private CourseResponse enrichAndConvert(Course course) {
-        if (course.getTeacher() == null && course.getTeacherId() != null) {
-            User teacher = userMapper.selectById(course.getTeacherId());
-            course.setTeacher(teacher);
+        User teacher = null;
+        if (course.getTeacherId() != null) {
+            teacher = userMapper.selectById(course.getTeacherId());
         }
-        return CourseResponse.fromEntity(course);
+        return CourseResponse.fromEntity(course, teacher);
     }
 }

@@ -6,12 +6,16 @@ import com.autograding.entity.User;
 import com.autograding.mapper.ProblemMapper;
 import com.autograding.mapper.UserMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
 
@@ -24,6 +28,7 @@ class ProblemServiceTest {
 
     @Mock private ProblemMapper problemMapper;
     @Mock private UserMapper userMapper;
+    @Mock private OperationLogService operationLogService;
 
     @InjectMocks
     private ProblemService problemService;
@@ -37,6 +42,7 @@ class ProblemServiceTest {
         teacher.setId(1L);
         teacher.setUsername("teacher1");
         teacher.setRole(User.Role.TEACHER);
+        teacher.setDeleted(0);
 
         problem = new Problem();
         problem.setId(100L);
@@ -46,10 +52,21 @@ class ProblemServiceTest {
         problem.setDifficulty(1);
         problem.setIsPublic(1);
         problem.setDeleted(0);
+
+        var auth = new UsernamePasswordAuthenticationToken(
+            new org.springframework.security.core.userdetails.User("teacher1", "", List.of(new SimpleGrantedAuthority("ROLE_TEACHER"))),
+            null);
+        SecurityContextHolder.getContext().setAuthentication(auth);
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
     }
 
     @Test
     void createProblem_shouldSucceed() {
+        when(userMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(teacher);
         when(userMapper.selectById(1L)).thenReturn(teacher);
         when(problemMapper.insert(any(Problem.class))).thenReturn(1);
 

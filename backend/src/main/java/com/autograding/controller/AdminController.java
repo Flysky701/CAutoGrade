@@ -4,6 +4,7 @@ import com.autograding.common.Result;
 import com.autograding.entity.OperationLog;
 import com.autograding.entity.User;
 import com.autograding.service.OperationLogService;
+import com.autograding.service.SystemConfigService;
 import com.autograding.service.UserService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -25,11 +27,41 @@ public class AdminController {
 
     private final OperationLogService operationLogService;
     private final UserService userService;
+    private final SystemConfigService systemConfigService;
 
-    public AdminController(OperationLogService operationLogService, UserService userService) {
+    public AdminController(OperationLogService operationLogService, UserService userService,
+                           SystemConfigService systemConfigService) {
         this.operationLogService = operationLogService;
         this.userService = userService;
+        this.systemConfigService = systemConfigService;
     }
+
+    // ==================== 系统配置 ====================
+
+    @GetMapping("/config")
+    public Result<Map<String, Object>> getConfig() {
+        return Result.success(systemConfigService.getAllConfig());
+    }
+
+    @PutMapping("/config/llm")
+    public Result<Map<String, Object>> updateLlmConfig(@RequestBody Map<String, Object> config) {
+        systemConfigService.updateConfig("llm", config);
+        return Result.success(systemConfigService.getAllConfig());
+    }
+
+    @PutMapping("/config/sandbox")
+    public Result<Map<String, Object>> updateSandboxConfig(@RequestBody Map<String, Object> config) {
+        systemConfigService.updateConfig("sandbox", config);
+        return Result.success(systemConfigService.getAllConfig());
+    }
+
+    @PutMapping("/config/scoring")
+    public Result<Map<String, Object>> updateScoringConfig(@RequestBody Map<String, Object> config) {
+        systemConfigService.updateConfig("scoring", config);
+        return Result.success(systemConfigService.getAllConfig());
+    }
+
+    // ==================== 操作日志 ====================
 
     @GetMapping("/logs")
     public Result<List<OperationLog>> getRecentLogs(@RequestParam(defaultValue = "100") int limit) {
@@ -50,6 +82,11 @@ public class AdminController {
             return Result.success(userService.getUsersByRole(User.Role.valueOf(role.toUpperCase())));
         }
         return Result.success(userService.getAllUsers());
+    }
+
+    @GetMapping("/users/{id}")
+    public Result<User> getUserById(@PathVariable Long id) {
+        return Result.success(userService.getUserById(id));
     }
 
     @PostMapping("/users")

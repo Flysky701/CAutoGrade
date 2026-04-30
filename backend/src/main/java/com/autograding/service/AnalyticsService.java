@@ -2,7 +2,6 @@ package com.autograding.service;
 
 import com.autograding.entity.Assignment;
 import com.autograding.entity.ClassStudent;
-import com.autograding.entity.Course;
 import com.autograding.entity.GradingResult;
 import com.autograding.entity.Submission;
 import com.autograding.mapper.*;
@@ -10,7 +9,6 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -35,6 +33,10 @@ public class AnalyticsService {
         this.classStudentMapper = classStudentMapper;
     }
 
+    private BigDecimal getEffectiveScore(GradingResult r) {
+        return r.getHumanAdjustedScore() != null ? r.getHumanAdjustedScore() : r.getTotalScore();
+    }
+
     public Map<String, Object> getClassAnalytics(Long classId) {
         LambdaQueryWrapper<ClassStudent> csWrapper = new LambdaQueryWrapper<>();
         csWrapper.eq(ClassStudent::getClassId, classId);
@@ -42,11 +44,16 @@ public class AnalyticsService {
         int totalStudents = classStudents.size();
 
         if (totalStudents == 0) {
-            return Map.of(
-                "totalStudents", 0,
-                "submissionRate", 0.0,
-                "averageScore", 0.0
-            );
+            Map<String, Object> empty = new LinkedHashMap<>();
+            empty.put("totalStudents", 0);
+            empty.put("submissionRate", 0.0);
+            empty.put("averageScore", 0.0);
+            empty.put("passRate", 0.0);
+            empty.put("excellentRate", 0.0);
+            empty.put("scoreDistribution", new LinkedHashMap<>());
+            empty.put("knowledgePoints", List.of());
+            empty.put("errorTop10", List.of());
+            return empty;
         }
 
         List<Long> studentIds = classStudents.stream()
@@ -69,18 +76,63 @@ public class AnalyticsService {
 
         double submissionRate = (double) submittedCount / totalStudents * 100;
 
-        List<GradingResult> results = gradingResultMapper.selectList(null);
+        List<Long> submissionIds = submissions.stream().map(Submission::getId).toList();
+        List<GradingResult> results;
+        if (submissionIds.isEmpty()) {
+            results = List.of();
+        } else {
+            LambdaQueryWrapper<GradingResult> grWrapper = new LambdaQueryWrapper<>();
+            grWrapper.in(GradingResult::getSubmissionId, submissionIds);
+            results = gradingResultMapper.selectList(grWrapper);
+        }
         double averageScore = results.stream()
-                .filter(r -> r.getTotalScore() != null)
-                .mapToDouble(r -> r.getTotalScore().doubleValue())
+                .map(this::getEffectiveScore)
+                .filter(Objects::nonNull)
+                .mapToDouble(BigDecimal::doubleValue)
                 .average()
                 .orElse(0.0);
 
-        return Map.of(
-            "totalStudents", totalStudents,
-            "submissionRate", Math.round(submissionRate * 100) / 100.0,
-            "averageScore", Math.round(averageScore * 100) / 100.0
-        );
+        long passedCount = results.stream()
+                .map(this::getEffectiveScore)
+                .filter(Objects::nonNull)
+                .filter(s -> s.compareTo(BigDecimal.valueOf(60)) >= 0)
+                .count();
+        double passRate = results.isEmpty() ? 0.0 : (double) passedCount / results.size() * 100;
+
+        long excellentCount = results.stream()
+                .map(this::getEffectiveScore)
+                .filter(Objects::nonNull)
+                .filter(s -> s.compareTo(BigDecimal.valueOf(90)) >= 0)
+                .count();
+        double excellentRate = results.isEmpty() ? 0.0 : (double) excellentCount / results.size() * 100;
+
+        Map<String, Integer> scoreDistribution = new LinkedHashMap<>();
+        scoreDistribution.put("0-59", 0);
+        scoreDistribution.put("60-69", 0);
+        scoreDistribution.put("70-79", 0);
+        scoreDistribution.put("80-89", 0);
+        scoreDistribution.put("90-100", 0);
+        for (GradingResult r : results) {
+            BigDecimal effective = getEffectiveScore(r);
+            if (effective == null) continue;
+            int score = effective.intValue();
+            if (score < 60) scoreDistribution.merge("0-59", 1, Integer::sum);
+            else if (score < 70) scoreDistribution.merge("60-69", 1, Integer::sum);
+            else if (score < 80) scoreDistribution.merge("70-79", 1, Integer::sum);
+            else if (score < 90) scoreDistribution.merge("80-89", 1, Integer::sum);
+            else scoreDistribution.merge("90-100", 1, Integer::sum);
+        }
+
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("totalStudents", totalStudents);
+        map.put("submissionRate", Math.round(submissionRate * 100) / 100.0);
+        map.put("averageScore", Math.round(averageScore * 100) / 100.0);
+        map.put("passRate", Math.round(passRate * 100) / 100.0);
+        map.put("excellentRate", Math.round(excellentRate * 100) / 100.0);
+        map.put("scoreDistribution", scoreDistribution);
+        map.put("knowledgePoints", List.of());
+        map.put("errorTop10", List.of());
+        return map;
     }
 
     public Map<String, Object> getStudentAnalytics(Long studentId) {
@@ -91,20 +143,24 @@ public class AnalyticsService {
 
         int totalSubmissions = submissions.size();
 
-        LambdaQueryWrapper<GradingResult> grWrapper = new LambdaQueryWrapper<>();
-        List<Long> submissionIds = submissions.stream().map(Submission::getId).toList();
-        grWrapper.in(GradingResult::getSubmissionId, submissionIds);
-        List<GradingResult> results = gradingResultMapper.selectList(grWrapper);
+        List<GradingResult> results = new ArrayList<>();
+        if (!submissions.isEmpty()) {
+            LambdaQueryWrapper<GradingResult> grWrapper = new LambdaQueryWrapper<>();
+            List<Long> submissionIds = submissions.stream().map(Submission::getId).toList();
+            grWrapper.in(GradingResult::getSubmissionId, submissionIds);
+            results = gradingResultMapper.selectList(grWrapper);
+        }
 
         double averageScore = results.stream()
-                .filter(r -> r.getTotalScore() != null)
-                .mapToDouble(r -> r.getTotalScore().doubleValue())
+                .map(this::getEffectiveScore)
+                .filter(Objects::nonNull)
+                .mapToDouble(BigDecimal::doubleValue)
                 .average()
                 .orElse(0.0);
 
         BigDecimal maxScore = results.stream()
-                .filter(r -> r.getTotalScore() != null)
-                .map(GradingResult::getTotalScore)
+                .map(this::getEffectiveScore)
+                .filter(Objects::nonNull)
                 .max(BigDecimal::compareTo)
                 .orElse(BigDecimal.ZERO);
 
@@ -128,31 +184,30 @@ public class AnalyticsService {
 
         int totalSubmissions = submissions.size();
 
+        List<Long> submissionIds = submissions.stream().map(Submission::getId).toList();
         List<GradingResult> results = new ArrayList<>();
-        for (Submission s : submissions) {
+        if (!submissionIds.isEmpty()) {
             LambdaQueryWrapper<GradingResult> grWrapper = new LambdaQueryWrapper<>();
-            grWrapper.eq(GradingResult::getSubmissionId, s.getId());
-            GradingResult r = gradingResultMapper.selectOne(grWrapper);
-            if (r != null) {
-                results.add(r);
-            }
+            grWrapper.in(GradingResult::getSubmissionId, submissionIds);
+            results = gradingResultMapper.selectList(grWrapper);
         }
 
         double averageScore = results.stream()
-                .filter(r -> r.getTotalScore() != null)
-                .mapToDouble(r -> r.getTotalScore().doubleValue())
+                .map(this::getEffectiveScore)
+                .filter(Objects::nonNull)
+                .mapToDouble(BigDecimal::doubleValue)
                 .average()
                 .orElse(0.0);
 
         BigDecimal maxScore = results.stream()
-                .filter(r -> r.getTotalScore() != null)
-                .map(GradingResult::getTotalScore)
+                .map(this::getEffectiveScore)
+                .filter(Objects::nonNull)
                 .max(BigDecimal::compareTo)
                 .orElse(BigDecimal.ZERO);
 
         BigDecimal minScore = results.stream()
-                .filter(r -> r.getTotalScore() != null)
-                .map(GradingResult::getTotalScore)
+                .map(this::getEffectiveScore)
+                .filter(Objects::nonNull)
                 .min(BigDecimal::compareTo)
                 .orElse(BigDecimal.ZERO);
 
@@ -173,18 +228,18 @@ public class AnalyticsService {
 
         int totalSubmissions = submissions.size();
 
+        List<Long> submissionIds = submissions.stream().map(Submission::getId).toList();
         List<GradingResult> results = new ArrayList<>();
-        for (Submission s : submissions) {
+        if (!submissionIds.isEmpty()) {
             LambdaQueryWrapper<GradingResult> grWrapper = new LambdaQueryWrapper<>();
-            grWrapper.eq(GradingResult::getSubmissionId, s.getId());
-            GradingResult r = gradingResultMapper.selectOne(grWrapper);
-            if (r != null) {
-                results.add(r);
-            }
+            grWrapper.in(GradingResult::getSubmissionId, submissionIds);
+            results = gradingResultMapper.selectList(grWrapper);
         }
 
         int passedCount = (int) results.stream()
-                .filter(r -> r.getTotalScore() != null && r.getTotalScore().compareTo(BigDecimal.valueOf(60)) >= 0)
+                .map(this::getEffectiveScore)
+                .filter(Objects::nonNull)
+                .filter(s -> s.compareTo(BigDecimal.valueOf(60)) >= 0)
                 .count();
 
         double passRate = totalSubmissions > 0 ? (double) passedCount / totalSubmissions * 100 : 0;

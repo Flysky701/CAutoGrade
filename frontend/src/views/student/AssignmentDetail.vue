@@ -49,21 +49,20 @@ const loadDetail = async () => {
   try {
     const [aRes, pRes] = await Promise.all([
       assignmentApi.getById(assignmentId),
-      assignmentApi.getProblems(assignmentId),
+      assignmentApi.getProblemDetails(assignmentId),
     ])
     assignment.value = (aRes as any).data
     problems.value = (pRes as any).data || []
 
-    // Load submissions for each problem
-    const subPromises = problems.value.map((p: any) =>
-      submissionApi.getMySubmissions().then((r: any) => {
-        const subs = (r.data || []).filter((s: any) => s.assignmentId === assignmentId && s.problemId === p.id)
-        if (subs.length) {
-          submissions.value = { ...submissions.value, [p.id]: subs[0] }
-        }
-      }).catch(() => {})
-    )
-    await Promise.all(subPromises)
+    // Load submissions for each problem (use problemId, not join-table id)
+    const subRes: any = await submissionApi.getMySubmissions()
+    const allSubs = subRes.data || []
+    for (const p of problems.value) {
+      const subs = allSubs.filter((s: any) => s.assignmentId === assignmentId && s.problemId === p.problemId)
+      if (subs.length) {
+        submissions.value[p.problemId] = subs[0]
+      }
+    }
   } catch {
     ElMessage.error('加载作业详情失败')
   } finally {
@@ -78,6 +77,15 @@ const typeLabel = (type: string) => {
 }
 
 const difficultyStars = (level: number) => '★'.repeat(level) + '☆'.repeat(5 - level)
+
+const parseTagList = (tags: any): string[] => {
+  if (!tags) return []
+  if (Array.isArray(tags)) return tags
+  if (typeof tags === 'string') {
+    try { const arr = JSON.parse(tags); if (Array.isArray(arr)) return arr } catch { return [tags] }
+  }
+  return []
+}
 
 onMounted(loadDetail)
 </script>
@@ -120,14 +128,16 @@ onMounted(loadDetail)
         </el-table-column>
         <el-table-column prop="knowledgeTags" label="知识点" min-width="180">
           <template #default="{ row }">
-            <el-tag v-for="tag in row.knowledgeTags" :key="tag" size="small" style="margin:2px">{{ tag }}</el-tag>
+            <template v-if="row.knowledgeTags">
+              <el-tag v-for="tag in parseTagList(row.knowledgeTags)" :key="tag" size="small" style="margin:2px">{{ tag }}</el-tag>
+            </template>
           </template>
         </el-table-column>
         <el-table-column label="状态" width="140">
           <template #default="{ row }">
-            <template v-if="submissions[row.id]">
-              <el-tag v-if="submissions[row.id].gradingStatus === 'DONE'" type="success" size="small">已批阅</el-tag>
-              <el-tag v-else-if="submissions[row.id].gradingStatus === 'PROCESSING'" type="warning" size="small">批阅中</el-tag>
+            <template v-if="submissions[row.problemId]">
+              <el-tag v-if="submissions[row.problemId].gradingStatus === 'DONE'" type="success" size="small">已批阅</el-tag>
+              <el-tag v-else-if="submissions[row.problemId].gradingStatus === 'PROCESSING'" type="warning" size="small">批阅中</el-tag>
               <el-tag v-else type="info" size="small">已提交</el-tag>
             </template>
             <span v-else style="color:#909399">未提交</span>
@@ -135,11 +145,11 @@ onMounted(loadDetail)
         </el-table-column>
         <el-table-column label="操作" width="200">
           <template #default="{ row }">
-            <el-button size="small" type="primary" @click="router.push(`/student/submit/${assignmentId}/${row.id}`)">
-              {{ submissions[row.id] ? '再次提交' : '写代码' }}
+            <el-button size="small" type="primary" @click="router.push(`/student/submit/${assignmentId}/${row.problemId}`)">
+              {{ submissions[row.problemId] ? '再次提交' : '写代码' }}
             </el-button>
-            <el-button v-if="submissions[row.id]?.gradingStatus === 'DONE'" size="small"
-              @click="router.push(`/student/grading/${submissions[row.id].id}`)">
+            <el-button v-if="submissions[row.problemId]?.gradingStatus === 'DONE'" size="small"
+              @click="router.push(`/student/grading/${submissions[row.problemId].id}`)">
               查看结果
             </el-button>
           </template>
