@@ -19,7 +19,7 @@ onMounted(async () => {
     const results = await Promise.allSettled([
       courseApi.getMyCourses(),
       assignmentApi.getMyAssignments(),
-      gradingApi.getPending(),
+      gradingApi.getUnreviewed(),
       classApi.getMyClasses(),
     ])
     const courses = (results[0] as any).value?.data || []

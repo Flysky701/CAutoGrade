@@ -25,17 +25,20 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final UserDetailsService userDetailsService;
     private final JwtTokenProvider jwtTokenProvider;
+    private final OperationLogService operationLogService;
 
     public AuthService(UserMapper userMapper,
                        PasswordEncoder passwordEncoder,
                        AuthenticationManager authenticationManager,
                        UserDetailsService userDetailsService,
-                       JwtTokenProvider jwtTokenProvider) {
+                       JwtTokenProvider jwtTokenProvider,
+                       OperationLogService operationLogService) {
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
         this.userDetailsService = userDetailsService;
         this.jwtTokenProvider = jwtTokenProvider;
+        this.operationLogService = operationLogService;
     }
 
     public AuthResponse register(RegisterRequest request) {
@@ -69,8 +72,12 @@ public class AuthService {
         user.setUpdatedAt(LocalDateTime.now());
         userMapper.insert(user);
 
+        operationLogService.logOperation(user.getId(), "REGISTER", "USER", user.getId(),
+                "用户注册: " + user.getUsername(), null);
+
         UserDetails userDetails = userDetailsService.loadUserByUsername(user.getUsername());
         String token = jwtTokenProvider.generateToken(userDetails);
+
         return new AuthResponse(token, user.getUsername(), user.getRole().name(), user.getCode());
     }
 
@@ -84,13 +91,11 @@ public class AuthService {
             throw new BusinessException("用户名或密码错误");
         }
 
-        // 优先通过 UserDetailsService 获取用户信息（与认证流程一致）
         UserDetails userDetails = userDetailsService.loadUserByUsername(account);
         if (userDetails == null) {
             throw new BusinessException("用户名或密码错误");
         }
 
-        // 查询完整 User 对象获取额外信息（code 字段）
         User user = userMapper.selectOne(new LambdaQueryWrapper<User>()
                 .eq(User::getUsername, userDetails.getUsername())
                 .eq(User::getDeleted, 0)
@@ -106,6 +111,10 @@ public class AuthService {
         }
 
         String token = jwtTokenProvider.generateToken(userDetails);
+
+        operationLogService.logOperation(user.getId(), "LOGIN", "USER", user.getId(),
+                "用户登录: " + user.getUsername(), null);
+
         return new AuthResponse(token, user.getUsername(), user.getRole().name(), user.getCode());
     }
 

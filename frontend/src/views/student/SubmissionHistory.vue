@@ -19,7 +19,7 @@ onMounted(async () => {
     const names: Record<number, string> = {}
     await Promise.all(ids.map(async (aid) => {
       try {
-        const aRes = await assignmentApi.getById(aid) as any
+        const aRes = await assignmentApi.getById(aid, { _silent: true } as any) as any
         names[aid as number] = aRes?.data?.title || `作业 #${aid}`
       } catch {
         names[aid as number] = `已删除作业 #${aid}`

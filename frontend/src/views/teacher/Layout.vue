@@ -22,7 +22,7 @@ const breadcrumbMap: Record<string, string> = {
   '/teacher/grading-review': '批阅审核',
   '/teacher/analytics': '学情分析',
   '/teacher/announcements': '公告管理',
-  '/teacher/score-export': '成绩导出',
+  '/teacher/score-export': '成绩查看与导出',
   '/teacher/profile': '个人设置',
 }
 
@@ -73,7 +73,7 @@ const breadcrumbs = computed(() => {
               <el-icon><Checked /></el-icon><span>批阅审核</span>
             </el-menu-item>
             <el-menu-item index="/teacher/score-export">
-              <el-icon><Download /></el-icon><span>成绩导出</span>
+              <el-icon><Download /></el-icon><span>成绩查看与导出</span>
             </el-menu-item>
           </el-menu-item-group>
           <el-menu-item-group title="分析">

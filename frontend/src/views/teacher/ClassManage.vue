@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { ElMessage, ElMessageBox, ElTable, ElTableColumn, ElButton, ElDialog, ElForm, ElFormItem, ElInput, ElTag, ElTooltip } from 'element-plus'
+import { ElMessage, ElMessageBox, ElTable, ElTableColumn, ElButton, ElDialog, ElForm, ElFormItem, ElInput, ElTag, ElTooltip, ElPopconfirm } from 'element-plus'
 import { CopyDocument } from '@element-plus/icons-vue'
 import { classApi, userApi } from '@/api'
 
@@ -177,6 +177,15 @@ onMounted(loadClasses)
         </template>
       </el-table-column>
       <el-table-column prop="studentCount" label="学生数" width="100" />
+      <el-table-column label="操作" width="100">
+        <template #default="{ row }">
+          <el-popconfirm title="确认删除该班级？" @confirm="handleDeleteClass(row.id)">
+            <template #reference>
+              <el-button size="small" type="danger" plain>删除</el-button>
+            </template>
+          </el-popconfirm>
+        </template>
+      </el-table-column>
     </el-table>
 
     <el-dialog v-model="showCreateDialog" title="创建班级" width="480px">

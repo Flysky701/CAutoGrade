@@ -3,6 +3,7 @@ package com.autograding.controller;
 import com.autograding.common.Result;
 import com.autograding.entity.OperationLog;
 import com.autograding.entity.User;
+import com.autograding.security.SecurityUtils;
 import com.autograding.service.OperationLogService;
 import com.autograding.service.SystemConfigService;
 import com.autograding.service.UserService;
@@ -46,18 +47,24 @@ public class AdminController {
     @PutMapping("/config/llm")
     public Result<Map<String, Object>> updateLlmConfig(@RequestBody Map<String, Object> config) {
         systemConfigService.updateConfig("llm", config);
+        operationLogService.logOperation(SecurityUtils.getCurrentUserId(), "UPDATE_CONFIG", "SYSTEM", null,
+                "更新LLM配置", null);
         return Result.success(systemConfigService.getAllConfig());
     }
 
     @PutMapping("/config/sandbox")
     public Result<Map<String, Object>> updateSandboxConfig(@RequestBody Map<String, Object> config) {
         systemConfigService.updateConfig("sandbox", config);
+        operationLogService.logOperation(SecurityUtils.getCurrentUserId(), "UPDATE_CONFIG", "SYSTEM", null,
+                "更新沙箱配置", null);
         return Result.success(systemConfigService.getAllConfig());
     }
 
     @PutMapping("/config/scoring")
     public Result<Map<String, Object>> updateScoringConfig(@RequestBody Map<String, Object> config) {
         systemConfigService.updateConfig("scoring", config);
+        operationLogService.logOperation(SecurityUtils.getCurrentUserId(), "UPDATE_CONFIG", "SYSTEM", null,
+                "更新评分配置", null);
         return Result.success(systemConfigService.getAllConfig());
     }
 

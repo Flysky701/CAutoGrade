@@ -200,9 +200,48 @@ public class SubmissionService {
                 item.put("efficiencyScore", gr.getEfficiencyScore());
                 item.put("gradingStatus", gr.getGradingStatus() != null ? gr.getGradingStatus().name() : null);
                 item.put("humanAdjustedScore", gr.getHumanAdjustedScore());
+                item.put("reviewFeedback", gr.getReviewFeedback());
+                item.put("feedbackJson", gr.getFeedbackJson());
+
+                item.put("effectiveScore",
+                        gr.getHumanAdjustedScore() != null ? gr.getHumanAdjustedScore() : gr.getTotalScore());
+
+                String effectiveFeedback = gr.getReviewFeedback();
+                if (effectiveFeedback == null || effectiveFeedback.isBlank()) {
+                    effectiveFeedback = extractSummaryFromFeedbackJson(gr.getFeedbackJson());
+                }
+                item.put("effectiveFeedback", effectiveFeedback);
             }
             result.add(item);
         }
         return result;
+    }
+
+    private String extractSummaryFromFeedbackJson(String feedbackJson) {
+        if (feedbackJson == null || feedbackJson.isBlank()) {
+            return null;
+        }
+        try {
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            Map<String, Object> map = mapper.readValue(feedbackJson, Map.class);
+            Object summary = map.get("summary");
+            if (summary != null && !summary.toString().isBlank()) {
+                return summary.toString();
+            }
+            Object feedback = map.get("feedback");
+            if (feedback != null && !feedback.toString().isBlank()) {
+                return feedback.toString();
+            }
+            Object overall = map.get("overall_comment");
+            if (overall != null && !overall.toString().isBlank()) {
+                return overall.toString();
+            }
+            return null;
+        } catch (Exception e) {
+            if (feedbackJson.length() > 200) {
+                return feedbackJson.substring(0, 200) + "...";
+            }
+            return feedbackJson;
+        }
     }
 }
