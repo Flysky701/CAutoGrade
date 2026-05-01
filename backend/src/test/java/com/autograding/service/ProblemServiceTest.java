@@ -66,7 +66,7 @@ class ProblemServiceTest {
 
     @Test
     void createProblem_shouldSucceed() {
-        when(userMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(teacher);
+        lenient().when(userMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(teacher);
         when(userMapper.selectById(1L)).thenReturn(teacher);
         when(problemMapper.insert(any(Problem.class))).thenReturn(1);
 

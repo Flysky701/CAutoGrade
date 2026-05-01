@@ -27,11 +27,16 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.mockStatic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(value = ClassController.class, excludeAutoConfiguration = SecurityAutoConfiguration.class)
+@WebMvcTest(value = ClassController.class,
+        excludeAutoConfiguration = SecurityAutoConfiguration.class,
+        excludeFilters = @org.springframework.context.annotation.ComponentScan.Filter(
+                type = org.springframework.context.annotation.FilterType.ASSIGNABLE_TYPE,
+                classes = com.autograding.config.SecurityConfig.class))
 class ClassControllerTest {
 
     @Autowired private MockMvc mockMvc;
@@ -43,6 +48,7 @@ class ClassControllerTest {
 
     private ClassResponse classResponse;
     private User mockUser;
+    private AutoCloseable mockStaticCloseable;
 
     @BeforeEach
     void setUp() {
@@ -60,18 +66,18 @@ class ClassControllerTest {
     }
 
     private void setAuth() {
-        // Set up mock authentication so SecurityUtils.getCurrentUserId() works
-        var auth = new UsernamePasswordAuthenticationToken(
-            new org.springframework.security.core.userdetails.User("teacher1", "", List.of(new SimpleGrantedAuthority("ROLE_TEACHER"))),
-            null);
-        SecurityContextHolder.getContext().setAuthentication(auth);
-        // Mock UserMapper to return user for SecurityUtils.getCurrentUserId()
-        when(userMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(mockUser);
+        mockStaticCloseable = mockStatic(com.autograding.security.SecurityUtils.class);
+        when(com.autograding.security.SecurityUtils.getCurrentUserId()).thenReturn(1L);
+        when(com.autograding.security.SecurityUtils.requireCurrentUserId()).thenReturn(1L);
     }
 
     @AfterEach
     void tearDown() {
         SecurityContextHolder.clearContext();
+        if (mockStaticCloseable != null) {
+            try { mockStaticCloseable.close(); } catch (Exception e) { /* ignore */ }
+            mockStaticCloseable = null;
+        }
     }
 
     @Test

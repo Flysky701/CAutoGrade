@@ -23,6 +23,7 @@ public class SystemConfigService {
     private final ObjectMapper objectMapper;
 
     private final Map<String, Object> configCache = new ConcurrentHashMap<>();
+    private volatile boolean dbAvailable = true;
 
     private static final Map<String, Map<String, Object>> DEFAULTS = new LinkedHashMap<>();
 
@@ -63,29 +64,42 @@ public class SystemConfigService {
     public void init() {
         for (Map.Entry<String, Map<String, Object>> entry : DEFAULTS.entrySet()) {
             String key = entry.getKey();
-            SystemConfig existing = findByKey(key);
-            if (existing != null) {
-                configCache.put(key, deserialize(existing.getConfigValue()));
-            } else {
-                Map<String, Object> defaultValue = entry.getValue();
-                persistToDb(key, defaultValue);
+            Map<String, Object> defaultValue = entry.getValue();
+
+            try {
+                SystemConfig existing = findByKey(key);
+                if (existing != null) {
+                    Map<String, Object> deserialized = deserialize(existing.getConfigValue());
+                    configCache.put(key, deserialized != null ? deserialized : defaultValue);
+                } else {
+                    persistToDb(key, defaultValue);
+                    configCache.put(key, defaultValue);
+                }
+            } catch (Exception e) {
+                dbAvailable = false;
                 configCache.put(key, defaultValue);
+                log.warn("DB unavailable for config key '{}', using default value: {}", key, e.getMessage());
             }
         }
-        log.info("System config initialized, keys: {}", configCache.keySet());
+        log.info("System config initialized, keys: {}, dbAvailable: {}", configCache.keySet(), dbAvailable);
     }
 
     public Map<String, Object> getAllConfig() {
         return new LinkedHashMap<>(configCache);
     }
 
-    @SuppressWarnings("unchecked")
     public void updateConfig(String key, Map<String, Object> value) {
         if (!DEFAULTS.containsKey(key)) {
             throw new IllegalArgumentException("Unknown config key: " + key);
         }
-        persistToDb(key, value);
         configCache.put(key, value);
+        if (dbAvailable) {
+            try {
+                persistToDb(key, value);
+            } catch (Exception e) {
+                log.warn("Failed to persist config key '{}': {}", key, e.getMessage());
+            }
+        }
     }
 
     private void persistToDb(String key, Map<String, Object> value) {

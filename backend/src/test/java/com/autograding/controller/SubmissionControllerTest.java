@@ -28,21 +28,30 @@ import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.mockStatic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(value = SubmissionController.class, excludeAutoConfiguration = SecurityAutoConfiguration.class)
+@WebMvcTest(value = SubmissionController.class, excludeAutoConfiguration = SecurityAutoConfiguration.class, excludeFilters = @org.springframework.context.annotation.ComponentScan.Filter(type = org.springframework.context.annotation.FilterType.ASSIGNABLE_TYPE, classes = com.autograding.config.SecurityConfig.class))
 class SubmissionControllerTest {
 
-    @Autowired private MockMvc mockMvc;
-    @Autowired private ObjectMapper objectMapper;
-    @MockBean private SubmissionService submissionService;
-    @MockBean private com.autograding.security.JwtTokenProvider jwtTokenProvider;
-    @MockBean private UserDetailsService userDetailsService;
-    @MockBean private UserMapper userMapper;
+    @Autowired
+    private MockMvc mockMvc;
+    @Autowired
+    private ObjectMapper objectMapper;
+    @MockBean
+    private SubmissionService submissionService;
+    @MockBean
+    private com.autograding.security.JwtTokenProvider jwtTokenProvider;
+    @MockBean
+    private UserDetailsService userDetailsService;
+    @MockBean
+    private UserMapper userMapper;
+
+    private AutoCloseable mockStaticCloseable;
 
     private Submission submission;
     private GradingResult gradingResult;
@@ -74,24 +83,27 @@ class SubmissionControllerTest {
     }
 
     private void setStudentAuth() {
-        var auth = new UsernamePasswordAuthenticationToken(
-            new org.springframework.security.core.userdetails.User("student1", "", List.of(new SimpleGrantedAuthority("ROLE_STUDENT"))),
-            null);
-        SecurityContextHolder.getContext().setAuthentication(auth);
-        when(userMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(student);
+        mockStaticCloseable = mockStatic(com.autograding.security.SecurityUtils.class);
+        when(com.autograding.security.SecurityUtils.getCurrentUserId()).thenReturn(100L);
+        when(com.autograding.security.SecurityUtils.requireCurrentUserId()).thenReturn(100L);
     }
 
     private void setTeacherAuth() {
-        var auth = new UsernamePasswordAuthenticationToken(
-            new org.springframework.security.core.userdetails.User("teacher1", "", List.of(new SimpleGrantedAuthority("ROLE_TEACHER"))),
-            null);
-        SecurityContextHolder.getContext().setAuthentication(auth);
-        when(userMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(student); // any user for userId lookup
+        mockStaticCloseable = mockStatic(com.autograding.security.SecurityUtils.class);
+        when(com.autograding.security.SecurityUtils.getCurrentUserId()).thenReturn(2L);
+        when(com.autograding.security.SecurityUtils.requireCurrentUserId()).thenReturn(2L);
     }
 
     @AfterEach
     void tearDown() {
         SecurityContextHolder.clearContext();
+        if (mockStaticCloseable != null) {
+            try {
+                mockStaticCloseable.close();
+            } catch (Exception e) {
+                /* ignore */ }
+            mockStaticCloseable = null;
+        }
     }
 
     @Test
@@ -104,8 +116,8 @@ class SubmissionControllerTest {
                 Map.of("assignmentId", 5, "problemId", 20, "code", "#include <stdio.h>\nint main() { return 0; }"));
 
         mockMvc.perform(post("/api/submissions")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(body))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data.assignmentId").value(5))
@@ -170,8 +182,8 @@ class SubmissionControllerTest {
                 .thenReturn(reviewed);
 
         mockMvc.perform(put("/api/submissions/grading/1/review")
-                        .param("adjustedScore", "90.00")
-                        .param("feedback", "批阅合理"))
+                .param("adjustedScore", "90.00")
+                .param("feedback", "批阅合理"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data.humanAdjustedScore").value(90.00));

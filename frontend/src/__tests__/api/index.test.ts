@@ -129,9 +129,9 @@ describe('API Layer Tests', () => {
       expect(mockAxios.post).toHaveBeenCalledWith('/classes', { name: '一班', courseId: 10 })
     })
 
-    it('join should POST /classes/join?inviteCode=ABC', () => {
+    it('join should POST /classes/join with inviteCode param', () => {
       classApi.join('ABC')
-      expect(mockAxios.post).toHaveBeenCalledWith('/classes/join?inviteCode=ABC')
+      expect(mockAxios.post).toHaveBeenCalledWith('/classes/join', null, { params: { inviteCode: 'ABC' } })
     })
 
     it('addStudent should POST /classes/100/students/5', () => {
@@ -289,9 +289,9 @@ describe('API Layer Tests', () => {
       expect(mockAxios.get).toHaveBeenCalledWith('/gradings/assignment/5')
     })
 
-    it('review should PUT /submissions/grading/1/review', () => {
+    it('review should PUT /submissions/grading/1/review with params', () => {
       gradingApi.review(1, 90, 'Good')
-      expect(mockAxios.put).toHaveBeenCalledWith('/submissions/grading/1/review?adjustedScore=90&feedback=Good')
+      expect(mockAxios.put).toHaveBeenCalledWith('/submissions/grading/1/review', null, { params: { adjustedScore: 90, feedback: 'Good' } })
     })
   })
 })

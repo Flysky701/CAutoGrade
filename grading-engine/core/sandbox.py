@@ -1,10 +1,21 @@
 import os
 import tempfile
-import subprocess
-import yaml
+import shutil
 import logging
 
+import docker
+import yaml
+
 logger = logging.getLogger(__name__)
+
+_client = None
+
+
+def _get_docker_client():
+    global _client
+    if _client is None:
+        _client = docker.from_env()
+    return _client
 
 
 def _load_config():
@@ -26,71 +37,65 @@ class SandboxRunner:
         self.memory_limit_mb = runtime.get("memory_limit_mb", 256)
 
     def compile(self, code_content: str) -> dict:
-        """Compile C code in a Docker container, return binary path or errors."""
         tmpdir = tempfile.mkdtemp(prefix="sandbox_")
         src_path = os.path.join(tmpdir, "main.c")
-        out_path = os.path.join(tmpdir, "a.out")
         error_path = os.path.join(tmpdir, "compile_error.txt")
 
         with open(src_path, "w", encoding="utf-8") as f:
             f.write(code_content)
 
-        cmd = [
-            "docker", "run", "--rm",
-            "--network", "none",
-            f"--memory={self.memory_limit_mb}m",
-            f"--cpus=1",
-            "-v", f"{tmpdir}:/code:rw",
-            "-w", "/code",
-            self.SANDBOX_IMAGE,
-            "sh", "-c",
-            f"gcc -Wall -O2 -o /code/a.out /code/main.c 2>/code/compile_error.txt && echo 'OK' || echo 'FAIL'"
-        ]
+        compile_script = (
+            "gcc -Wall -O2 -o /code/a.out /code/main.c "
+            "2>/code/compile_error.txt && echo 'OK' || echo 'FAIL'"
+        )
 
         try:
-            result = subprocess.run(cmd, capture_output=True, text=True,
-                                    timeout=self.compile_timeout + 5)
-            stdout = result.stdout.strip()
+            client = _get_docker_client()
+            container = client.containers.run(
+                image=self.SANDBOX_IMAGE,
+                command=["sh", "-c", compile_script],
+                volumes={tmpdir: {"bind": "/code", "mode": "rw"}},
+                working_dir="/code",
+                network_mode="none",
+                mem_limit=f"{self.memory_limit_mb}m",
+                nano_cpus=int(1e9),
+                detach=True,
+            )
+            try:
+                result = container.wait(timeout=self.compile_timeout + 5)
+                exit_code = result.get("StatusCode", -1)
+            except Exception:
+                container.kill()
+                exit_code = -1
+
+            stdout = container.logs().decode("utf-8", errors="replace").strip()
 
             compile_error = ""
             if os.path.exists(error_path):
                 with open(error_path, "r", encoding="utf-8", errors="replace") as f:
                     compile_error = f.read().strip()
 
-            success = "OK" in stdout and "FAIL" not in stdout
+            success = exit_code == 0 and "OK" in stdout
             return {
                 "success": success,
                 "error": compile_error if not success else "",
                 "tmpdir": tmpdir,
-                "binary": out_path if success else None,
             }
-        except subprocess.TimeoutExpired:
+        except Exception as e:
+            logger.error(f"Sandbox compile error: {e}")
             return {
                 "success": False,
-                "error": "Compilation timed out",
+                "error": f"Sandbox error: {str(e)}",
                 "tmpdir": tmpdir,
-                "binary": None,
             }
+        finally:
+            try:
+                container.remove(force=True)
+            except Exception:
+                pass
 
-    def run(self, code_content: str, stdin_input: str = "") -> dict:
-        """Compile and run C code, returning execution results."""
-        compile_result = self.compile(code_content)
-
-        if not compile_result["success"]:
-            return {
-                "exit_code": -1,
-                "stdout": "",
-                "stderr": compile_result["error"],
-                "time_ms": 0,
-                "memory_kb": 0,
-                "compile_success": False,
-                "compile_error": compile_result["error"],
-            }
-
-        tmpdir = compile_result["tmpdir"]
+    def run_test(self, tmpdir: str, stdin_input: str = "") -> dict:
         stdin_path = os.path.join(tmpdir, "stdin.txt")
-        stdout_path = os.path.join(tmpdir, "stdout.txt")
-        stderr_path = os.path.join(tmpdir, "stderr.txt")
 
         with open(stdin_path, "w", encoding="utf-8") as f:
             f.write(stdin_input)
@@ -99,24 +104,30 @@ class SandboxRunner:
             f"ulimit -t {self.run_timeout} && "
             f"ulimit -v {self.memory_limit_mb * 1024} && "
             f"/usr/bin/time -f '%e %M' -o /code/time.txt "
-            f"/code/a.out </code/stdin.txt >/code/stdout.txt 2>/code/stderr.txt"
+            f"/code/a.out </code/stdin.txt"
         )
 
-        cmd = [
-            "docker", "run", "--rm",
-            "--network", "none",
-            f"--memory={self.memory_limit_mb}m",
-            f"--cpus=1",
-            "-v", f"{tmpdir}:/code:rw",
-            "-w", "/code",
-            self.SANDBOX_IMAGE,
-            "sh", "-c", run_script
-        ]
-
         try:
-            result = subprocess.run(cmd, capture_output=True, text=True,
-                                    timeout=self.run_timeout + 10)
+            client = _get_docker_client()
+            container = client.containers.run(
+                image=self.SANDBOX_IMAGE,
+                command=["sh", "-c", run_script],
+                volumes={tmpdir: {"bind": "/code", "mode": "rw"}},
+                working_dir="/code",
+                network_mode="none",
+                mem_limit=f"{self.memory_limit_mb}m",
+                nano_cpus=int(1e9),
+                detach=True,
+            )
+            try:
+                result = container.wait(timeout=self.run_timeout + 10)
+                exit_code = result.get("StatusCode", -1)
+            except Exception:
+                container.kill()
+                exit_code = -1
 
+            stdout_path = os.path.join(tmpdir, "stdout.txt")
+            stderr_path = os.path.join(tmpdir, "stderr.txt")
             stdout = ""
             stderr = ""
             if os.path.exists(stdout_path):
@@ -137,24 +148,27 @@ class SandboxRunner:
                         memory_kb = int(parts[1])
 
             return {
-                "exit_code": result.returncode,
+                "exit_code": exit_code,
                 "stdout": stdout.strip(),
                 "stderr": stderr.strip(),
                 "time_ms": time_ms,
                 "memory_kb": memory_kb,
-                "compile_success": True,
-                "compile_error": "",
             }
-        except subprocess.TimeoutExpired:
+        except Exception as e:
+            logger.error(f"Sandbox run error: {e}")
             return {
                 "exit_code": -1,
                 "stdout": "",
-                "stderr": "Execution timed out",
-                "time_ms": self.run_timeout * 1000,
+                "stderr": f"Sandbox error: {str(e)}",
+                "time_ms": 0,
                 "memory_kb": 0,
-                "compile_success": True,
-                "compile_error": "",
             }
         finally:
-            import shutil
+            try:
+                container.remove(force=True)
+            except Exception:
+                pass
+
+    def cleanup(self, tmpdir: str):
+        if tmpdir and os.path.exists(tmpdir):
             shutil.rmtree(tmpdir, ignore_errors=True)

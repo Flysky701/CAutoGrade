@@ -1,27 +1,34 @@
-"""ChromaDB vector store for C programming knowledge base."""
 import os
 import chromadb
 from chromadb.config import Settings
 
-_client: chromadb.ClientAPI | None = None
+_client = None
 _collection_name = "c_programming_knowledge"
 
 
-def _get_persist_dir() -> str:
-    return os.path.join(os.path.dirname(os.path.dirname(__file__)), "chroma_data")
-
-
-def get_client() -> chromadb.ClientAPI:
+def _get_chroma_client():
     global _client
     if _client is None:
-        persist_dir = _get_persist_dir()
-        os.makedirs(persist_dir, exist_ok=True)
-        _client = chromadb.PersistentClient(path=persist_dir, settings=Settings(anonymized_telemetry=False))
+        host = os.getenv("CHROMA_HOST")
+        port = os.getenv("CHROMA_PORT")
+        if host and port:
+            _client = chromadb.HttpClient(
+                host=host,
+                port=int(port),
+                settings=Settings(anonymized_telemetry=False),
+            )
+        else:
+            persist_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "chroma_data")
+            os.makedirs(persist_dir, exist_ok=True)
+            _client = chromadb.PersistentClient(
+                path=persist_dir,
+                settings=Settings(anonymized_telemetry=False),
+            )
     return _client
 
 
-def get_collection() -> chromadb.Collection:
-    client = get_client()
+def get_collection():
+    client = _get_chroma_client()
     existing = [c.name for c in client.list_collections()]
     if _collection_name not in existing:
         return client.create_collection(
@@ -32,10 +39,6 @@ def get_collection() -> chromadb.Collection:
 
 
 def add_documents(docs: list[dict]) -> None:
-    """Add documents to the vector store.
-
-    Each doc dict should have: id (str), content (str), metadata (dict), embedding (list[float] | None)
-    """
     if not docs:
         return
     collection = get_collection()
@@ -44,7 +47,6 @@ def add_documents(docs: list[dict]) -> None:
     metadatas = [d.get("metadata", {}) for d in docs]
     embeddings = [d.get("embedding") for d in docs]
 
-    # Remove existing docs with same IDs
     try:
         existing = collection.get(ids=ids)
         if existing and existing["ids"]:
@@ -56,7 +58,6 @@ def add_documents(docs: list[dict]) -> None:
 
 
 def search_by_embedding(query_embedding: list[float], n_results: int = 10) -> list[dict]:
-    """Search documents by embedding similarity."""
     collection = get_collection()
     try:
         results = collection.query(query_embeddings=[query_embedding], n_results=n_results)
@@ -76,9 +77,9 @@ def search_by_embedding(query_embedding: list[float], n_results: int = 10) -> li
 
 
 def search_by_keyword(keywords: list[str], n_results: int = 10) -> list[dict]:
-    """Search documents by keyword in metadata tags."""
+    if not keywords:
+        return []
     collection = get_collection()
-    all_ids = []
     try:
         count = collection.count()
         if count == 0:

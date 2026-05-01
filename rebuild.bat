@@ -54,12 +54,14 @@ cd ..
 echo.
 echo [4/4] 重新部署容器...
 echo   → 构建后端与批改引擎镜像(利用层缓存加速)...
-docker-compose build backend grading-worker
+docker compose build --no-cache backend
+docker compose build grading-worker
 if %errorlevel% neq 0 (
     echo [错误] Docker构建失败
     pause
     exit /b 1
 )
+
 echo   → 启动所有服务...
 docker-compose up -d
 if %errorlevel% neq 0 (
@@ -67,7 +69,6 @@ if %errorlevel% neq 0 (
     pause
     exit /b 1
 )
-
 echo.
 echo ========================================
 echo   构建完成！

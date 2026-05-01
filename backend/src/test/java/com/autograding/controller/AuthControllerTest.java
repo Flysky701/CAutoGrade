@@ -21,7 +21,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(value = AuthController.class, excludeAutoConfiguration = SecurityAutoConfiguration.class)
+@WebMvcTest(value = AuthController.class,
+        excludeAutoConfiguration = SecurityAutoConfiguration.class,
+        excludeFilters = @org.springframework.context.annotation.ComponentScan.Filter(
+                type = org.springframework.context.annotation.FilterType.ASSIGNABLE_TYPE,
+                classes = com.autograding.config.SecurityConfig.class))
 class AuthControllerTest {
 
     @Autowired private MockMvc mockMvc;

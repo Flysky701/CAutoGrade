@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useAuthStore } from '@/stores/auth'
 import { usePermission } from '@/composables/usePermission'
@@ -7,6 +7,8 @@ describe('usePermission', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     localStorage.clear()
+    delete (window as any).location
+    ;(window as any).location = { href: '' }
   })
 
   it('can should return true for matching role', () => {

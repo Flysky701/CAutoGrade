@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass, field
 from core.sandbox import SandboxRunner
 
@@ -23,80 +24,69 @@ class StaticAnalysisResult:
 
 
 class StaticAnalyzer:
-    UNSAFE_FUNCTIONS = ["gets(", "scanf(", "strcpy(", "strcat(", "sprintf("]
+    UNSAFE_PATTERNS = [
+        (r'\bgets\s*\(', "Use of unsafe function: gets()"),
+        (r'\bscanf\s*\(\s*["\']%s["\']', "Use of unsafe scanf with %s (buffer overflow risk)"),
+        (r'\bstrcpy\s*\(', "Use of unsafe function: strcpy()"),
+        (r'\bstrcat\s*\(', "Use of unsafe function: strcat()"),
+        (r'\bsprintf\s*\(', "Use of unsafe function: sprintf()"),
+    ]
 
     def __init__(self):
         self.sandbox = SandboxRunner()
 
     def _check_code_quality(self, code: str) -> list[str]:
-        """Basic code quality checks for common C pitfalls."""
         warnings = []
-        lower_code = code.lower()
-        for func in self.UNSAFE_FUNCTIONS:
-            if func in lower_code:
-                warnings.append(f"Use of unsafe function: {func}")
-        if "main(" not in lower_code:
+        for pattern, message in self.UNSAFE_PATTERNS:
+            if re.search(pattern, code):
+                warnings.append(message)
+        if "main(" not in code:
             warnings.append("Missing main function")
-        if "#include" not in lower_code:
+        if "#include" not in code:
             warnings.append("Missing #include directives")
         if "malloc(" in code and "free(" not in code:
             warnings.append("malloc without matching free")
         return warnings
 
     def _normalize_output(self, text: str) -> str:
-        """Strip trailing whitespace from each line and trailing newlines."""
         lines = text.rstrip().split("\n")
         return "\n".join(line.rstrip() for line in lines)
 
-    def _run_test_case(self, compiled_code: str, test_case: dict) -> TestCaseResult:
-        """Run one test case against the compiled code."""
+    def _run_test_case(self, tmpdir: str, test_case: dict) -> TestCaseResult:
         stdin = test_case.get("input_data", test_case.get("input", ""))
         expected = test_case.get("expected_output", test_case.get("expected", ""))
 
-        result = self.sandbox.run(compiled_code, stdin_input=stdin)
+        result = self.sandbox.run_test(tmpdir, stdin_input=stdin)
 
-        if not result["compile_success"]:
-            return TestCaseResult(
-                case_id=test_case.get("id", 0),
-                passed=False,
-                input_data=stdin,
-                expected=expected,
-                actual=f"Compilation error: {result['compile_error']}",
-                weight=test_case.get("weight", 10),
-            )
-
-        actual = self._normalize_output(result["stdout"])
+        actual = self._normalize_output(result.get("stdout", ""))
         expected_normalized = self._normalize_output(expected)
 
         passed = actual == expected_normalized
 
-        if not passed and result["stderr"]:
-            display = result["stderr"]
-        elif not passed:
-            display = result["stdout"].strip()
+        if not passed:
+            display = result.get("stderr", "") or result.get("stdout", "")
         else:
-            display = result["stdout"].strip()
+            display = result.get("stdout", "")
 
         return TestCaseResult(
             case_id=test_case.get("id", 0),
             passed=passed,
             input_data=stdin,
             expected=expected,
-            actual=display,
+            actual=display.strip(),
             weight=test_case.get("weight", 10),
         )
 
     def analyze(self, code_content: str, test_cases: list[dict] = None) -> StaticAnalysisResult:
-        """
-        Compile and run C code against test cases.
-        test_cases: list of dicts with keys: id, input_data, expected_output, weight, is_hidden
-        """
         test_cases = test_cases or []
-
         warnings = self._check_code_quality(code_content)
 
         compile_result = self.sandbox.compile(code_content)
+        tmpdir = compile_result.get("tmpdir")
+
         if not compile_result["success"]:
+            if tmpdir:
+                self.sandbox.cleanup(tmpdir)
             return StaticAnalysisResult(
                 compile_success=False,
                 compile_error=compile_result["error"],
@@ -107,11 +97,15 @@ class StaticAnalyzer:
 
         results = []
         passed = 0
-        for tc in test_cases:
-            result = self._run_test_case(code_content, tc)
-            results.append(result)
-            if result.passed:
-                passed += 1
+        try:
+            for tc in test_cases:
+                result = self._run_test_case(tmpdir, tc)
+                results.append(result)
+                if result.passed:
+                    passed += 1
+        finally:
+            if tmpdir:
+                self.sandbox.cleanup(tmpdir)
 
         return StaticAnalysisResult(
             compile_success=True,

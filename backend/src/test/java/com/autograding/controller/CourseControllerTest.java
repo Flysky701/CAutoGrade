@@ -28,19 +28,26 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.mockStatic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(value = CourseController.class, excludeAutoConfiguration = SecurityAutoConfiguration.class)
+@WebMvcTest(value = CourseController.class, excludeAutoConfiguration = SecurityAutoConfiguration.class, excludeFilters = @org.springframework.context.annotation.ComponentScan.Filter(type = org.springframework.context.annotation.FilterType.ASSIGNABLE_TYPE, classes = com.autograding.config.SecurityConfig.class))
 class CourseControllerTest {
 
-    @Autowired private MockMvc mockMvc;
-    @Autowired private ObjectMapper objectMapper;
-    @MockBean private CourseService courseService;
-    @MockBean private UserMapper userMapper;
-    @MockBean private com.autograding.security.JwtTokenProvider jwtTokenProvider;
-    @MockBean private UserDetailsService userDetailsService;
+    @Autowired
+    private MockMvc mockMvc;
+    @Autowired
+    private ObjectMapper objectMapper;
+    @MockBean
+    private CourseService courseService;
+    @MockBean
+    private UserMapper userMapper;
+    @MockBean
+    private com.autograding.security.JwtTokenProvider jwtTokenProvider;
+    @MockBean
+    private UserDetailsService userDetailsService;
 
     private User teacher;
 
@@ -64,17 +71,24 @@ class CourseControllerTest {
         teacher.setRole(User.Role.TEACHER);
     }
 
+    private AutoCloseable mockStaticCloseable;
+
     private void setAuth() {
-        var auth = new UsernamePasswordAuthenticationToken(
-            new org.springframework.security.core.userdetails.User("teacher1", "", List.of(new SimpleGrantedAuthority("ROLE_TEACHER"))),
-            null);
-        SecurityContextHolder.getContext().setAuthentication(auth);
-        when(userMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(teacher);
+        mockStaticCloseable = mockStatic(com.autograding.security.SecurityUtils.class);
+        when(com.autograding.security.SecurityUtils.getCurrentUserId()).thenReturn(1L);
+        when(com.autograding.security.SecurityUtils.requireCurrentUserId()).thenReturn(1L);
     }
 
     @AfterEach
     void tearDown() {
         SecurityContextHolder.clearContext();
+        if (mockStaticCloseable != null) {
+            try {
+                mockStaticCloseable.close();
+            } catch (Exception e) {
+                /* ignore */ }
+            mockStaticCloseable = null;
+        }
     }
 
     @Test
@@ -88,8 +102,8 @@ class CourseControllerTest {
         request.setSemester("2026-SPRING");
 
         mockMvc.perform(post("/api/courses")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data.name").value("C语言程序设计"));
@@ -98,6 +112,7 @@ class CourseControllerTest {
     @Test
     void getAllCourses_shouldReturnTeacherCourses() throws Exception {
         setAuth();
+        when(userMapper.selectById(1L)).thenReturn(teacher);
         when(courseService.getCoursesByTeacher(eq(1L)))
                 .thenReturn(List.of(buildResponse(10L, "C语言")));
 

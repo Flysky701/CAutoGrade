@@ -78,7 +78,7 @@ class CourseServiceTest {
     @Test
     void createCourse_shouldSucceed() {
         when(userMapper.selectById(1L)).thenReturn(teacher);
-        when(userMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(teacher);
+        lenient().when(userMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(teacher);
         when(courseMapper.insert(any(Course.class))).thenReturn(1);
 
         CourseResponse response = courseService.createCourse(createRequest, 1L);

@@ -24,13 +24,18 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(value = AdminController.class, excludeAutoConfiguration = SecurityAutoConfiguration.class)
+@WebMvcTest(value = AdminController.class,
+        excludeAutoConfiguration = SecurityAutoConfiguration.class,
+        excludeFilters = @org.springframework.context.annotation.ComponentScan.Filter(
+                type = org.springframework.context.annotation.FilterType.ASSIGNABLE_TYPE,
+                classes = com.autograding.config.SecurityConfig.class))
 class AdminControllerTest {
 
     @Autowired private MockMvc mockMvc;
     @Autowired private ObjectMapper objectMapper;
     @MockBean private OperationLogService operationLogService;
     @MockBean private UserService userService;
+    @MockBean private com.autograding.service.SystemConfigService systemConfigService;
     @MockBean private com.autograding.security.JwtTokenProvider jwtTokenProvider;
     @MockBean private UserDetailsService userDetailsService;
 

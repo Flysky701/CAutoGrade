@@ -48,6 +48,8 @@ services:
     restart: always
     ports:
       - "8080:8080"
+    volumes:
+      - ./backend/target/backend-1.0.0-SNAPSHOT.jar:/app/app.jar
     environment:
       MYSQL_HOST: mysql
       MYSQL_PORT: 3306

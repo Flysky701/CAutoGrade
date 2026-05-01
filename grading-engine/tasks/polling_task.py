@@ -1,5 +1,3 @@
-"""One-shot polling task: fetch PENDING gradings, run pipeline, write results."""
-
 import os
 import json
 import logging
@@ -31,12 +29,20 @@ def _build_dispatcher():
         api_key=api_key,
         base_url=llm_cfg.get("base_url", "https://api.deepseek.com/v1"),
         model=llm_cfg.get("model", "deepseek-chat"),
+        timeout=llm_cfg.get("timeout", 30),
     )
     return Dispatcher(llm_service=llm_service)
 
 
+def _send_notification(submission_id, student_id, score):
+    try:
+        from tasks.notification_task import notify_grading_done
+        notify_grading_done.delay(submission_id, student_id, score)
+    except Exception as e:
+        logger.warning(f"Failed to queue notification for submission {submission_id}: {e}")
+
+
 def poll_and_grade():
-    """One cycle: fetch pending, grade each, write back."""
     db = MySQLClient()
     pending = db.fetch_pending_grading_results(limit=10)
 
@@ -45,7 +51,6 @@ def poll_and_grade():
 
     logger.info(f"Found {len(pending)} pending grading task(s)")
 
-    # Build dispatcher once per cycle (LLM service is stateless)
     try:
         dispatcher = _build_dispatcher()
     except Exception as e:
@@ -54,13 +59,17 @@ def poll_and_grade():
 
     for row in pending:
         submission_id = row["submission_id"]
+        student_id = row.get("student_id")
+
+        if not db.mark_processing(submission_id):
+            logger.info(f"Submission {submission_id} already being processed, skipping")
+            continue
+
         try:
-            # Fetch related data
             problem = db.fetch_problem(row["problem_id"])
             test_cases = db.fetch_test_cases(row["problem_id"])
             knowledge_tags = _parse_tags(problem.get("knowledge_tags", ""))
 
-            # Map test cases to the format dispatcher expects
             tc_list = [
                 {
                     "id": tc["id"],
@@ -72,7 +81,6 @@ def poll_and_grade():
                 for tc in test_cases
             ]
 
-            # Run grading pipeline
             raw_result = dispatcher.grade(
                 submission_id=submission_id,
                 code_content=row["code_content"],
@@ -82,9 +90,11 @@ def poll_and_grade():
                 knowledge_tags=knowledge_tags,
             )
 
-            # Format and write
             formatted = format_grading_result(raw_result)
             db.update_grading_result(submission_id, formatted)
+
+            score = formatted.get("total_score")
+            _send_notification(submission_id, student_id, score)
 
         except Exception as e:
             logger.error(f"Grading failed for submission {submission_id}: {e}")
@@ -94,7 +104,6 @@ def poll_and_grade():
 
 
 def _parse_tags(tags_str):
-    """Parse knowledge_tags from JSON string or return empty list."""
     if not tags_str:
         return []
     try:

@@ -166,4 +166,55 @@ class AnalyticsServiceTest {
         assertEquals(0, result.get("passedCount"));
         assertEquals(0.0, (Double) result.get("passRate"), 0.01);
     }
+
+    @Test
+    void getEffectiveScore_prefersHumanAdjusted() {
+        gradingResult.setTotalScore(new BigDecimal("85.00"));
+        gradingResult.setHumanAdjustedScore(new BigDecimal("90.00"));
+
+        when(classStudentMapper.selectList(any(LambdaQueryWrapper.class)))
+                .thenReturn(List.of(classStudent));
+        when(submissionMapper.selectList(any(LambdaQueryWrapper.class)))
+                .thenReturn(List.of(submission));
+        when(gradingResultMapper.selectList(any()))
+                .thenReturn(List.of(gradingResult));
+
+        Map<String, Object> result = analyticsService.getClassAnalytics(10L);
+
+        assertEquals(90.0, (Double) result.get("averageScore"), 0.01);
+    }
+
+    @Test
+    void getEffectiveScore_fallsBackToTotalScore() {
+        gradingResult.setTotalScore(new BigDecimal("85.00"));
+        gradingResult.setHumanAdjustedScore(null);
+
+        when(classStudentMapper.selectList(any(LambdaQueryWrapper.class)))
+                .thenReturn(List.of(classStudent));
+        when(submissionMapper.selectList(any(LambdaQueryWrapper.class)))
+                .thenReturn(List.of(submission));
+        when(gradingResultMapper.selectList(any()))
+                .thenReturn(List.of(gradingResult));
+
+        Map<String, Object> result = analyticsService.getClassAnalytics(10L);
+
+        assertEquals(85.0, (Double) result.get("averageScore"), 0.01);
+    }
+
+    @Test
+    void getEffectiveScore_bothNull_returnsZeroAverage() {
+        gradingResult.setTotalScore(null);
+        gradingResult.setHumanAdjustedScore(null);
+
+        when(classStudentMapper.selectList(any(LambdaQueryWrapper.class)))
+                .thenReturn(List.of(classStudent));
+        when(submissionMapper.selectList(any(LambdaQueryWrapper.class)))
+                .thenReturn(List.of(submission));
+        when(gradingResultMapper.selectList(any()))
+                .thenReturn(List.of(gradingResult));
+
+        Map<String, Object> result = analyticsService.getClassAnalytics(10L);
+
+        assertEquals(0.0, (Double) result.get("averageScore"), 0.01);
+    }
 }

@@ -89,7 +89,7 @@ class ClassServiceTest {
     @Test
     void createClass_shouldSucceed() {
         when(courseMapper.selectById(10L)).thenReturn(course);
-        when(userMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(teacher);
+        lenient().when(userMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(teacher);
         when(classMapper.insert(any(Class.class))).thenReturn(1);
 
         ClassCreateRequest request = new ClassCreateRequest();

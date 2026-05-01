@@ -1,7 +1,3 @@
-"""MySQL client for the grading engine poller.
-Reads PENDING grading tasks and writes results back.
-"""
-
 import os
 import logging
 import json
@@ -31,7 +27,6 @@ class MySQLClient:
         )
 
     def fetch_pending_grading_results(self, limit=10):
-        """Fetch PENDING grading results with their associated submissions."""
         sql = """
         SELECT
             gr.id            AS grading_result_id,
@@ -57,8 +52,21 @@ class MySQLClient:
         finally:
             conn.close()
 
+    def mark_processing(self, submission_id):
+        sql = """
+        UPDATE grading_result SET grading_status = 'PROCESSING'
+        WHERE submission_id = %s AND grading_status = 'PENDING'
+        """
+        conn = self.get_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(sql, (submission_id,))
+            conn.commit()
+            return cur.rowcount > 0
+        finally:
+            conn.close()
+
     def fetch_problem(self, problem_id):
-        """Fetch a single problem by ID."""
         conn = self.get_connection()
         try:
             with conn.cursor() as cur:
@@ -73,7 +81,6 @@ class MySQLClient:
             conn.close()
 
     def fetch_test_cases(self, problem_id):
-        """Fetch all non-deleted test cases for a problem."""
         conn = self.get_connection()
         try:
             with conn.cursor() as cur:
@@ -91,7 +98,6 @@ class MySQLClient:
             conn.close()
 
     def update_grading_result(self, submission_id, grading_data):
-        """Write a completed grading result back to MySQL."""
         sql = """
         UPDATE grading_result SET
             total_score       = %s,
@@ -136,7 +142,6 @@ class MySQLClient:
             conn.close()
 
     def mark_failed(self, submission_id, error_message):
-        """Mark a grading result as FAILED with an error message."""
         sql = """
         UPDATE grading_result SET
             grading_status   = 'FAILED',

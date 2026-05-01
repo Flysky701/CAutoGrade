@@ -20,12 +20,6 @@ def _load_config():
 @app.task(bind=True, max_retries=3, default_retry_delay=5)
 def grade_code(self, submission_id, code_content, problem_id, test_cases=None,
                problem_description="", knowledge_tags=None):
-    """
-    Receive code from the backend and run the full grading pipeline.
-    test_cases: optional list of {id, input_data, expected_output, weight, is_hidden}
-    problem_description: problem description text for RAG retrieval
-    knowledge_tags: list of knowledge point tags for RAG retrieval
-    """
     logger.info(f"Grading task started — submission {submission_id}")
 
     try:
@@ -36,6 +30,7 @@ def grade_code(self, submission_id, code_content, problem_id, test_cases=None,
             api_key=api_key,
             base_url=llm_cfg.get("base_url", "https://api.deepseek.com/v1"),
             model=llm_cfg.get("model", "deepseek-chat"),
+            timeout=llm_cfg.get("timeout", 30),
         )
         dispatcher = Dispatcher(llm_service=llm_service)
         result = dispatcher.grade(

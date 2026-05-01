@@ -9,15 +9,15 @@ logger = logging.getLogger(__name__)
 
 
 class LLMService:
-    """Encapsulates communication with the LLM (DeepSeek primary, OpenAI fallback)."""
 
-    def __init__(self, api_key, base_url="https://api.deepseek.com/v1", model="deepseek-chat"):
+    def __init__(self, api_key, base_url="https://api.deepseek.com/v1",
+                 model="deepseek-chat", timeout=30):
         self.api_key = api_key
         self.base_url = base_url
         self.model = model
+        self.timeout = timeout
 
     def evaluate(self, code_content, static_result, rag_context):
-        """Build the full prompt with context and request grading from the LLM."""
         messages = [
             {"role": "system", "content": SYSTEM_PROMPT},
         ]
@@ -62,7 +62,7 @@ class LLMService:
                 f"{self.base_url}/chat/completions",
                 headers=headers,
                 json=payload,
-                timeout=60,
+                timeout=self.timeout,
             )
             response.raise_for_status()
 

@@ -124,21 +124,36 @@ public class NotificationScheduler {
         }
     }
 
-    @Scheduled(fixedDelay = 1_800_000, initialDelay = 120_000) // every 30 min
+    @Scheduled(fixedDelay = 1_800_000, initialDelay = 120_000)
     public void checkStuckGradingTasks() {
         LocalDateTime thirtyMinAgo = LocalDateTime.now().minusMinutes(30);
 
-        LambdaQueryWrapper<GradingResult> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(GradingResult::getGradingStatus, GradingResult.GradingStatus.PENDING)
-               .isNotNull(GradingResult::getGradedAt);
-        List<GradingResult> stuck = gradingResultMapper.selectList(wrapper);
+        LambdaQueryWrapper<GradingResult> processingWrapper = new LambdaQueryWrapper<>();
+        processingWrapper.eq(GradingResult::getGradingStatus, GradingResult.GradingStatus.PROCESSING);
+        List<GradingResult> stuckProcessing = gradingResultMapper.selectList(processingWrapper);
 
-        long stuckCount = stuck.stream()
+        for (GradingResult gr : stuckProcessing) {
+            gr.setGradingStatus(GradingResult.GradingStatus.PENDING);
+            gradingResultMapper.updateById(gr);
+            log.info("Reset stuck PROCESSING task id={} back to PENDING", gr.getId());
+        }
+
+        LambdaQueryWrapper<GradingResult> pendingWrapper = new LambdaQueryWrapper<>();
+        pendingWrapper.eq(GradingResult::getGradingStatus, GradingResult.GradingStatus.PENDING)
+                      .isNotNull(GradingResult::getGradedAt);
+        List<GradingResult> stuckPending = gradingResultMapper.selectList(pendingWrapper);
+
+        long stuckCount = stuckPending.stream()
                 .filter(g -> g.getGradedAt() != null && g.getGradedAt().isBefore(thirtyMinAgo))
                 .count();
 
         if (stuckCount > 0) {
             log.warn("Found {} stuck grading tasks (PENDING > 30 min)", stuckCount);
+        }
+
+        if (!stuckProcessing.isEmpty() || stuckCount > 0) {
+            log.info("Stuck task recovery: reset {} PROCESSING tasks, found {} stale PENDING tasks",
+                    stuckProcessing.size(), stuckCount);
         }
     }
 
