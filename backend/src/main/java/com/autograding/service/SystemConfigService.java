@@ -30,10 +30,11 @@ public class SystemConfigService {
     static {
         Map<String, Object> llm = new LinkedHashMap<>();
         llm.put("provider", "deepseek");
+        llm.put("baseUrl", "https://api.deepseek.com");
         llm.put("apiKey", "");
         llm.put("model", "deepseek-chat");
         llm.put("temperature", 0.3);
-        llm.put("maxTokens", 2048);
+        llm.put("maxTokens", 128000);
         llm.put("timeout", 30);
 
         Map<String, Object> sandbox = new LinkedHashMap<>();

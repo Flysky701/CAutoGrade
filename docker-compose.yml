@@ -69,8 +69,10 @@ services:
     restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./grading-engine:/app
+      - hf-cache:/app/.cache/huggingface
     environment:
-      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-sk-f32e76b601e44ccc889ceb169bd21d0f}
       CELERY_BROKER_URL: redis://redis:6379/1
       CHROMA_HOST: chromadb
       CHROMA_PORT: 8000
@@ -78,6 +80,7 @@ services:
       MYSQL_PORT: 3306
       MYSQL_USER: root
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-123456}
+      HF_ENDPOINT: https://hf-mirror.com
     depends_on:
       - redis
       - chromadb
@@ -99,3 +102,4 @@ volumes:
   mysql-data:
   redis-data:
   chroma-data:
+  hf-cache:

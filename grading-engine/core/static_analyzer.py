@@ -52,11 +52,11 @@ class StaticAnalyzer:
         lines = text.rstrip().split("\n")
         return "\n".join(line.rstrip() for line in lines)
 
-    def _run_test_case(self, tmpdir: str, test_case: dict) -> TestCaseResult:
-        stdin = test_case.get("input_data", test_case.get("input", ""))
-        expected = test_case.get("expected_output", test_case.get("expected", ""))
+    def _run_test_case(self, container_id: str, test_case: dict) -> TestCaseResult:
+        stdin = test_case.get("input_data") or test_case.get("input") or ""
+        expected = test_case.get("expected_output") or test_case.get("expected") or ""
 
-        result = self.sandbox.run_test(tmpdir, stdin_input=stdin)
+        result = self.sandbox.run_test(container_id, stdin_input=stdin)
 
         actual = self._normalize_output(result.get("stdout", ""))
         expected_normalized = self._normalize_output(expected)
@@ -82,11 +82,11 @@ class StaticAnalyzer:
         warnings = self._check_code_quality(code_content)
 
         compile_result = self.sandbox.compile(code_content)
-        tmpdir = compile_result.get("tmpdir")
+        container_id = compile_result.get("container_id")
 
         if not compile_result["success"]:
-            if tmpdir:
-                self.sandbox.cleanup(tmpdir)
+            if container_id:
+                self.sandbox.cleanup(container_id)
             return StaticAnalysisResult(
                 compile_success=False,
                 compile_error=compile_result["error"],
@@ -99,13 +99,13 @@ class StaticAnalyzer:
         passed = 0
         try:
             for tc in test_cases:
-                result = self._run_test_case(tmpdir, tc)
+                result = self._run_test_case(container_id, tc)
                 results.append(result)
                 if result.passed:
                     passed += 1
         finally:
-            if tmpdir:
-                self.sandbox.cleanup(tmpdir)
+            if container_id:
+                self.sandbox.cleanup(container_id)
 
         return StaticAnalysisResult(
             compile_success=True,

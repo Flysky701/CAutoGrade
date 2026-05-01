@@ -24,12 +24,13 @@ def _load_config():
 def _build_dispatcher():
     config = _load_config()
     llm_cfg = config.get("llm", {})
-    api_key = os.getenv("DEEPSEEK_API_KEY", "")
+    api_key = os.getenv("DEEPSEEK_API_KEY", "") or llm_cfg.get("api_key", "")
     llm_service = LLMService(
         api_key=api_key,
         base_url=llm_cfg.get("base_url", "https://api.deepseek.com/v1"),
         model=llm_cfg.get("model", "deepseek-chat"),
         timeout=llm_cfg.get("timeout", 30),
+        max_tokens=llm_cfg.get("max_tokens", 128000),
     )
     return Dispatcher(llm_service=llm_service)
 
@@ -97,7 +98,7 @@ def poll_and_grade():
             _send_notification(submission_id, student_id, score)
 
         except Exception as e:
-            logger.error(f"Grading failed for submission {submission_id}: {e}")
+            logger.error(f"Grading failed for submission {submission_id}: {e}", exc_info=True)
             db.mark_failed(submission_id, str(e))
 
     return len(pending)

@@ -9,10 +9,11 @@ const savingScoring = ref(false)
 
 const llmConfig = reactive({
   provider: 'deepseek',
+  baseUrl: 'https://api.deepseek.com',
   apiKey: '',
   model: 'deepseek-chat',
   temperature: 0.3,
-  maxTokens: 2048,
+  maxTokens: 128000,
   timeout: 30,
 })
 
@@ -47,8 +48,8 @@ const loadConfig = async () => {
 const handleSaveLLM = async () => {
   savingLLM.value = true
   try {
-    if (scoringConfig.correctnessWeight + scoringConfig.styleWeight + scoringConfig.efficiencyWeight !== 100) {
-      ElMessage.warning('评分配置三项权重之和应为 100%')
+    if (!llmConfig.baseUrl.trim()) {
+      ElMessage.warning('请输入 API Base URL')
       return
     }
     await api.put('/admin/config/llm', { ...llmConfig })
@@ -105,32 +106,39 @@ onMounted(loadConfig)
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12">
-                <el-form-item label="模型">
-                  <el-input v-model="llmConfig.model" placeholder="模型名称" />
+                <el-form-item label="API Base URL">
+                  <el-input v-model="llmConfig.baseUrl" placeholder="https://api.deepseek.com" />
                 </el-form-item>
               </el-col>
             </el-row>
             <el-row :gutter="16">
+              <el-col :xs="24" :sm="12">
+                <el-form-item label="模型">
+                  <el-input v-model="llmConfig.model" placeholder="模型名称" />
+                </el-form-item>
+              </el-col>
               <el-col :xs="24" :sm="12">
                 <el-form-item label="API Key">
                   <el-input v-model="llmConfig.apiKey" type="password" show-password placeholder="sk-..." />
                 </el-form-item>
               </el-col>
-              <el-col :xs="24" :sm="12">
-                <el-form-item label="请求超时(秒)">
-                  <el-input-number v-model="llmConfig.timeout" :min="5" :max="120" />
-                </el-form-item>
-              </el-col>
             </el-row>
             <el-row :gutter="16">
+              <el-col :xs="24" :sm="12">
+                <el-form-item label="请求超时(秒)">
+                  <el-input-number v-model="llmConfig.timeout" :min="5" :max="300" />
+                </el-form-item>
+              </el-col>
               <el-col :xs="24" :sm="12">
                 <el-form-item label="Temperature">
                   <el-input-number v-model="llmConfig.temperature" :min="0" :max="2" :step="0.1" :precision="1" />
                 </el-form-item>
               </el-col>
+            </el-row>
+            <el-row :gutter="16">
               <el-col :xs="24" :sm="12">
                 <el-form-item label="Max Tokens">
-                  <el-input-number v-model="llmConfig.maxTokens" :min="256" :max="8192" :step="256" />
+                  <el-input-number v-model="llmConfig.maxTokens" :min="256" :max="128000" :step="1024" />
                 </el-form-item>
               </el-col>
             </el-row>

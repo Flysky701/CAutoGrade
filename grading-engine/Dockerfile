@@ -6,12 +6,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends supervisor && \
 WORKDIR /app
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
+
 COPY . .
 
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONIOENCODING=utf-8
 ENV LANG=C.UTF-8
+ENV HF_HOME=/app/.cache/huggingface
+ENV HF_ENDPOINT=https://hf-mirror.com
 
-COPY supervisord.conf /etc/supervisor/conf.d/autograding.conf
+COPY supervisord.conf /etc/supervisor/supervisord.conf
 
-CMD ["supervisord", "-c", "/etc/supervisor/supervisord.conf"]
+CMD ["supervisord", "-c", "/etc/supervisor/supervisord.conf", "-n"]

@@ -10,7 +10,7 @@ def load_config():
     return {}
 
 config = load_config()
-redis_url = config.get('redis', {}).get('url', 'redis://localhost:6379/1')
+redis_url = config.get('redis', {}).get('url', 'redis://redis:6379/1')
 
 # 初始化 Celery
 app = Celery('grading_engine',

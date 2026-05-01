@@ -25,12 +25,13 @@ def grade_code(self, submission_id, code_content, problem_id, test_cases=None,
     try:
         config = _load_config()
         llm_cfg = config.get("llm", {})
-        api_key = os.getenv("DEEPSEEK_API_KEY", "")
+        api_key = os.getenv("DEEPSEEK_API_KEY", "") or llm_cfg.get("api_key", "")
         llm_service = LLMService(
             api_key=api_key,
             base_url=llm_cfg.get("base_url", "https://api.deepseek.com/v1"),
             model=llm_cfg.get("model", "deepseek-chat"),
             timeout=llm_cfg.get("timeout", 30),
+            max_tokens=llm_cfg.get("max_tokens", 128000),
         )
         dispatcher = Dispatcher(llm_service=llm_service)
         result = dispatcher.grade(

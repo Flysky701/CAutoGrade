@@ -22,7 +22,7 @@ onMounted(async () => {
         const aRes = await assignmentApi.getById(aid) as any
         names[aid as number] = aRes?.data?.title || `作业 #${aid}`
       } catch {
-        names[aid as number] = `作业 #${aid}`
+        names[aid as number] = `已删除作业 #${aid}`
       }
     }))
     assignmentNames.value = names

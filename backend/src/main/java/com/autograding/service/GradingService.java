@@ -59,7 +59,9 @@ public class GradingService {
     public List<Map<String, Object>> getUnreviewedGradings() {
         LambdaQueryWrapper<GradingResult> wrapper = new LambdaQueryWrapper<>();
         wrapper.isNull(GradingResult::getReviewedBy)
-              .eq(GradingResult::getGradingStatus, GradingResult.GradingStatus.DONE);
+              .in(GradingResult::getGradingStatus,
+                      GradingResult.GradingStatus.DONE,
+                      GradingResult.GradingStatus.FAILED);
         List<GradingResult> results = gradingResultMapper.selectList(wrapper);
 
         List<Map<String, Object>> enriched = new ArrayList<>();

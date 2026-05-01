@@ -36,6 +36,7 @@ Thumbs.db
 .github/
 CLAUDE.md
 CODEBUDDY.md
+.trae/
 
 # Logs
 *.log
@@ -43,3 +44,9 @@ logs/
 
 # docs
 docs/
+Questions/
+Qustions/
+
+# Temporary files
+LLM.md
+build-log.txt

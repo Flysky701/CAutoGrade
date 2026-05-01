@@ -11,11 +11,15 @@ logger = logging.getLogger(__name__)
 class LLMService:
 
     def __init__(self, api_key, base_url="https://api.deepseek.com/v1",
-                 model="deepseek-chat", timeout=30):
+                 model="deepseek-chat", timeout=30, max_tokens=128000):
         self.api_key = api_key
-        self.base_url = base_url
         self.model = model
         self.timeout = timeout
+        self.max_tokens = max_tokens
+        if base_url and not base_url.rstrip("/").endswith("/v1"):
+            self.base_url = base_url.rstrip("/") + "/v1"
+        else:
+            self.base_url = base_url
 
     def evaluate(self, code_content, static_result, rag_context):
         messages = [
@@ -51,7 +55,7 @@ class LLMService:
             "model": self.model,
             "messages": messages,
             "temperature": 0.2,
-            "max_tokens": 2000,
+            "max_tokens": self.max_tokens,
             "response_format": {"type": "json_object"},
         }
 

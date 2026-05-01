@@ -1,11 +1,16 @@
 redis:
-  url: redis://localhost:6379/1
+  url: redis://redis:6379/1
 
 llm:
   provider: deepseek
   base_url: https://api.deepseek.com/v1
-  model: deepseek-chat
-  timeout: 30
+  api_key: sk-f32e76b601e44ccc889ceb169bd21d0f
+  model: deepseek-v4-flash
+  timeout: 60
+  max_tokens: 128000
+
+docker:
+  mirror_url: xw4fis2eywyg7vamgy.xuanyuan.run
 
 runtime:
   compile_timeout_seconds: 5

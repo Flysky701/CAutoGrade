@@ -1,6 +1,7 @@
 import os
-import tempfile
-import shutil
+import io
+import tarfile
+import time
 import logging
 
 import docker
@@ -26,6 +27,61 @@ def _load_config():
     return {}
 
 
+def _ensure_image(client, image_name):
+    try:
+        client.images.get(image_name)
+        return True
+    except docker.errors.ImageNotFound:
+        pass
+
+    config = _load_config()
+    mirror = config.get("docker", {}).get("mirror_url", "")
+    if mirror:
+        mirror_image = f"{mirror}/{image_name}"
+        logger.info(f"Image {image_name} not found locally, trying mirror: {mirror_image}")
+        try:
+            client.images.pull(mirror_image)
+            img = client.images.get(mirror_image)
+            img.tag(image_name)
+            logger.info(f"Successfully pulled and tagged {image_name} from mirror")
+            return True
+        except Exception as e:
+            logger.warning(f"Mirror pull failed for {mirror_image}: {e}")
+
+    try:
+        logger.info(f"Pulling {image_name} from default registry...")
+        client.images.pull(image_name)
+        return True
+    except Exception as e:
+        logger.error(f"Failed to pull image {image_name}: {e}")
+        return False
+
+
+def _make_tar_bytes(files: dict) -> bytes:
+    buf = io.BytesIO()
+    with tarfile.open(fileobj=buf, mode="w") as tar:
+        for name, content in files.items():
+            if content is None:
+                content = ""
+            data = content.encode("utf-8") if isinstance(content, str) else content
+            info = tarfile.TarInfo(name=name)
+            info.size = len(data)
+            tar.addfile(info, io.BytesIO(data))
+    buf.seek(0)
+    return buf.read()
+
+
+def _extract_file_from_archive(archive_bytes, filename):
+    buf = io.BytesIO(archive_bytes)
+    with tarfile.open(fileobj=buf, mode="r") as tar:
+        for member in tar.getmembers():
+            if member.name == filename or member.name.endswith("/" + filename):
+                f = tar.extractfile(member)
+                if f:
+                    return f.read().decode("utf-8", errors="replace")
+    return ""
+
+
 class SandboxRunner:
     SANDBOX_IMAGE = "gcc:latest"
 
@@ -36,121 +92,169 @@ class SandboxRunner:
         self.run_timeout = runtime.get("run_timeout_seconds", 5)
         self.memory_limit_mb = runtime.get("memory_limit_mb", 256)
 
+    def _create_running_container(self, client):
+        container = client.containers.create(
+            image=self.SANDBOX_IMAGE,
+            command=["sleep", "300"],
+            network_mode="none",
+            mem_limit=f"{self.memory_limit_mb}m",
+        )
+        container.start()
+
+        for _ in range(10):
+            container.reload()
+            if container.status == "running":
+                break
+            time.sleep(0.5)
+        else:
+             logger.error(f"Container failed to start, status: {container.status}, logs: {container.logs().decode('utf-8', errors='replace')[:500]}")
+             try:
+                 container.remove(force=True)
+             except Exception:
+                 pass
+             return None
+
+        return container
+
     def compile(self, code_content: str) -> dict:
-        tmpdir = tempfile.mkdtemp(prefix="sandbox_")
-        src_path = os.path.join(tmpdir, "main.c")
-        error_path = os.path.join(tmpdir, "compile_error.txt")
-
-        with open(src_path, "w", encoding="utf-8") as f:
-            f.write(code_content)
-
         compile_script = (
             "gcc -Wall -O2 -o /code/a.out /code/main.c "
             "2>/code/compile_error.txt && echo 'OK' || echo 'FAIL'"
         )
 
+        container = None
         try:
             client = _get_docker_client()
-            container = client.containers.run(
-                image=self.SANDBOX_IMAGE,
-                command=["sh", "-c", compile_script],
-                volumes={tmpdir: {"bind": "/code", "mode": "rw"}},
-                working_dir="/code",
-                network_mode="none",
-                mem_limit=f"{self.memory_limit_mb}m",
-                nano_cpus=int(1e9),
-                detach=True,
-            )
-            try:
-                result = container.wait(timeout=self.compile_timeout + 5)
-                exit_code = result.get("StatusCode", -1)
-            except Exception:
-                container.kill()
-                exit_code = -1
+            _ensure_image(client, self.SANDBOX_IMAGE)
 
-            stdout = container.logs().decode("utf-8", errors="replace").strip()
+            container = self._create_running_container(client)
+            if container is None:
+                return {
+                    "success": False,
+                    "error": "Failed to start sandbox container",
+                    "container_id": None,
+                }
+
+            tar_data = _make_tar_bytes({"main.c": code_content})
+            container.put_archive("/tmp", tar_data)
+            container.exec_run(cmd=["sh", "-c", "mkdir -p /code && cp /tmp/main.c /code/main.c"])
+
+            exec_result = container.exec_run(
+                cmd=["sh", "-c", compile_script],
+                workdir="/code",
+            )
+
+            exit_code = exec_result.exit_code
+            output = exec_result.output or b""
+            if isinstance(output, bytes):
+                stdout = output.decode("utf-8", errors="replace").strip()
+            elif isinstance(output, tuple):
+                out_bytes = output[0] or b""
+                stdout = out_bytes.decode("utf-8", errors="replace").strip()
+            else:
+                stdout = str(output).strip()
 
             compile_error = ""
-            if os.path.exists(error_path):
-                with open(error_path, "r", encoding="utf-8", errors="replace") as f:
-                    compile_error = f.read().strip()
-
-            success = exit_code == 0 and "OK" in stdout
-            return {
-                "success": success,
-                "error": compile_error if not success else "",
-                "tmpdir": tmpdir,
-            }
-        except Exception as e:
-            logger.error(f"Sandbox compile error: {e}")
-            return {
-                "success": False,
-                "error": f"Sandbox error: {str(e)}",
-                "tmpdir": tmpdir,
-            }
-        finally:
             try:
-                container.remove(force=True)
+                bits, stat = container.get_archive("/code/compile_error.txt")
+                archive_data = b"".join(bits)
+                compile_error = _extract_file_from_archive(archive_data, "compile_error.txt").strip()
             except Exception:
                 pass
 
-    def run_test(self, tmpdir: str, stdin_input: str = "") -> dict:
-        stdin_path = os.path.join(tmpdir, "stdin.txt")
+            success = exit_code == 0 and "OK" in stdout
 
-        with open(stdin_path, "w", encoding="utf-8") as f:
-            f.write(stdin_input)
+            if not success:
+                try:
+                    container.remove(force=True)
+                except Exception:
+                    pass
+                container = None
 
-        run_script = (
-            f"ulimit -t {self.run_timeout} && "
-            f"ulimit -v {self.memory_limit_mb * 1024} && "
-            f"/usr/bin/time -f '%e %M' -o /code/time.txt "
-            f"/code/a.out </code/stdin.txt"
-        )
+            return {
+                "success": success,
+                "error": compile_error if not success else "",
+                "container_id": container.id if container else None,
+            }
+        except Exception as e:
+            logger.error(f"Sandbox compile error: {e}")
+            try:
+                if container:
+                    container.remove(force=True)
+            except Exception:
+                pass
+            return {
+                "success": False,
+                "error": f"Sandbox error: {str(e)}",
+                "container_id": None,
+            }
 
+    def run_test(self, container_id: str, stdin_input: str = "") -> dict:
         try:
             client = _get_docker_client()
-            container = client.containers.run(
-                image=self.SANDBOX_IMAGE,
-                command=["sh", "-c", run_script],
-                volumes={tmpdir: {"bind": "/code", "mode": "rw"}},
-                working_dir="/code",
-                network_mode="none",
-                mem_limit=f"{self.memory_limit_mb}m",
-                nano_cpus=int(1e9),
-                detach=True,
-            )
-            try:
-                result = container.wait(timeout=self.run_timeout + 10)
-                exit_code = result.get("StatusCode", -1)
-            except Exception:
-                container.kill()
-                exit_code = -1
 
-            stdout_path = os.path.join(tmpdir, "stdout.txt")
-            stderr_path = os.path.join(tmpdir, "stderr.txt")
+            try:
+                container = client.containers.get(container_id)
+            except Exception:
+                return {
+                    "exit_code": -1,
+                    "stdout": "",
+                    "stderr": "Container not found",
+                    "time_ms": 0,
+                    "memory_kb": 0,
+                }
+
+            stdin_tar = _make_tar_bytes({"stdin.txt": stdin_input})
+            container.put_archive("/tmp", stdin_tar)
+            container.exec_run(cmd=["sh", "-c", "cp /tmp/stdin.txt /code/stdin.txt"])
+
+            run_script = (
+                f"ulimit -t {self.run_timeout} && "
+                f"ulimit -v {self.memory_limit_mb * 1024} && "
+                f"/usr/bin/time -f '%e %M' -o /code/time.txt "
+                f"/code/a.out </code/stdin.txt > /code/stdout.txt 2>/code/stderr.txt; "
+                f"echo $?"
+            )
+
+            exec_result = container.exec_run(
+                cmd=["sh", "-c", run_script],
+                workdir="/code",
+            )
+
+            exit_code = exec_result.exit_code
+
             stdout = ""
+            try:
+                bits, _ = container.get_archive("/code/stdout.txt")
+                stdout = _extract_file_from_archive(b"".join(bits), "stdout.txt").strip()
+            except Exception:
+                output = exec_result.output or b""
+                if isinstance(output, bytes):
+                    stdout = output.decode("utf-8", errors="replace").strip()
+
             stderr = ""
-            if os.path.exists(stdout_path):
-                with open(stdout_path, "r", encoding="utf-8", errors="replace") as f:
-                    stdout = f.read()
-            if os.path.exists(stderr_path):
-                with open(stderr_path, "r", encoding="utf-8", errors="replace") as f:
-                    stderr = f.read()
+            try:
+                bits, _ = container.get_archive("/code/stderr.txt")
+                stderr = _extract_file_from_archive(b"".join(bits), "stderr.txt").strip()
+            except Exception:
+                pass
 
             time_ms = 0
             memory_kb = 0
-            time_path = os.path.join(tmpdir, "time.txt")
-            if os.path.exists(time_path):
-                with open(time_path, "r", encoding="utf-8", errors="replace") as f:
-                    parts = f.read().strip().split()
-                    if len(parts) >= 2:
-                        time_ms = int(float(parts[0]) * 1000)
-                        memory_kb = int(parts[1])
+            try:
+                bits, _ = container.get_archive("/code/time.txt")
+                time_content = _extract_file_from_archive(b"".join(bits), "time.txt").strip()
+                parts = time_content.split()
+                if len(parts) >= 2:
+                    time_ms = int(float(parts[0]) * 1000)
+                    memory_kb = int(parts[1])
+            except Exception:
+                pass
 
             return {
                 "exit_code": exit_code,
-                "stdout": stdout.strip(),
-                "stderr": stderr.strip(),
+                "stdout": stdout,
+                "stderr": stderr,
                 "time_ms": time_ms,
                 "memory_kb": memory_kb,
             }
@@ -163,12 +267,13 @@ class SandboxRunner:
                 "time_ms": 0,
                 "memory_kb": 0,
             }
-        finally:
-            try:
-                container.remove(force=True)
-            except Exception:
-                pass
 
-    def cleanup(self, tmpdir: str):
-        if tmpdir and os.path.exists(tmpdir):
-            shutil.rmtree(tmpdir, ignore_errors=True)
+    def cleanup(self, container_id):
+        if not container_id:
+            return
+        try:
+            client = _get_docker_client()
+            container = client.containers.get(container_id)
+            container.remove(force=True)
+        except Exception:
+            pass

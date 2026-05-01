@@ -29,6 +29,7 @@ const formatTime = (v: string) => {
     <h2>操作日志</h2>
     <el-table :data="logs" stripe v-loading="loading" style="margin-top: 20px">
       <el-table-column prop="id" label="ID" width="80" />
+      <el-table-column prop="userId" label="操作人ID" width="100" />
       <el-table-column prop="action" label="操作" width="140">
         <template #default="{ row }">
           <el-tag size="small">{{ row.action }}</el-tag>
