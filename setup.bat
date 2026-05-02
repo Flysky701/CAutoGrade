@@ -98,19 +98,19 @@ echo.
 
 :: MySQL Password
 set "MYSQL_PASSWORD="
-set /p "MYSQL_PASSWORD=  [1/4] MySQL root password [autograding2026]: "
+set /p "MYSQL_PASSWORD=  [1/7] MySQL root password [autograding2026]: "
 if "%MYSQL_PASSWORD%"=="" set "MYSQL_PASSWORD=autograding2026"
 
 :: JWT Secret
 set "JWT_SECRET="
-set /p "JWT_SECRET=  [2/4] JWT Secret Key (min 32 chars) [auto-generated]: "
+set /p "JWT_SECRET=  [2/7] JWT Secret Key (min 32 chars) [auto-generated]: "
 if "%JWT_SECRET%"=="" (
     set "JWT_SECRET=YXV0b2dyYWRpbmctand0LXNlY3JldC1rZXktZm9yLXByb2R1Y3Rpb24tMjAyNi1zZWN1cmU"
 )
 
 :: DeepSeek API Key
 set "DEEPSEEK_API_KEY="
-set /p "DEEPSEEK_API_KEY=  [3/4] DeepSeek API Key (required for LLM grading): "
+set /p "DEEPSEEK_API_KEY=  [3/7] DeepSeek API Key (required for LLM grading): "
 if "%DEEPSEEK_API_KEY%"=="" (
     echo   [WARN] No API Key provided. LLM grading will be unavailable!
     echo          You can set it later by editing .env file.
@@ -118,16 +118,39 @@ if "%DEEPSEEK_API_KEY%"=="" (
 
 :: Redis Password
 set "REDIS_PASSWORD="
-set /p "REDIS_PASSWORD=  [4/4] Redis password [%MYSQL_PASSWORD%]: "
+set /p "REDIS_PASSWORD=  [4/7] Redis password [%MYSQL_PASSWORD%]: "
 if "%REDIS_PASSWORD%"=="" set "REDIS_PASSWORD=%MYSQL_PASSWORD%"
+
+:: Server Domain / IP
+set "SERVER_DOMAIN="
+set /p "SERVER_DOMAIN=  [5/7] Server domain or IP (e.g. example.com or 192.168.1.100) [localhost]: "
+if "%SERVER_DOMAIN%"=="" set "SERVER_DOMAIN=localhost"
+
+:: CORS Allowed Origins
+set "CORS_ALLOWED_ORIGINS="
+set /p "CORS_ALLOWED_ORIGINS=  [6/7] CORS allowed origins (comma-separated) [http://localhost,http://localhost:*,http://127.0.0.1,http://127.0.0.1:*]: "
+if "%CORS_ALLOWED_ORIGINS%"=="" (
+    set "CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:*,http://127.0.0.1,http://127.0.0.1:*"
+)
+if not "%SERVER_DOMAIN%"=="localhost" (
+    set "CORS_ALLOWED_ORIGINS=!CORS_ALLOWED_ORIGINS!,http://!SERVER_DOMAIN!,http://!SERVER_DOMAIN!:*,https://!SERVER_DOMAIN!,https://!SERVER_DOMAIN!:*"
+)
+
+:: Enable Swagger
+set "SWAGGER_ENABLED="
+set /p "SWAGGER_ENABLED=  [7/7] Enable Swagger API docs in production? (true/false) [false]: "
+if "%SWAGGER_ENABLED%"=="" set "SWAGGER_ENABLED=false"
 
 echo.
 echo   Configuration summary:
 echo   ------------------------------------
-echo   MySQL Password:  ********
-echo   JWT Secret:      ********
-echo   DeepSeek API:    ********
-echo   Redis Password:  ********
+echo   MySQL Password:    ********
+echo   JWT Secret:        ********
+echo   DeepSeek API:      ********
+echo   Redis Password:    ********
+echo   Server Domain:     %SERVER_DOMAIN%
+echo   CORS Origins:      %CORS_ALLOWED_ORIGINS%
+echo   Swagger Enabled:   %SWAGGER_ENABLED%
 echo   ------------------------------------
 echo.
 set /p "CONFIRM=  Confirm and save? (Y/n): "
@@ -155,6 +178,16 @@ echo.
 echo DEEPSEEK_API_KEY=%DEEPSEEK_API_KEY%
 echo.
 echo REDIS_PASSWORD=%REDIS_PASSWORD%
+echo.
+echo SERVER_DOMAIN=%SERVER_DOMAIN%
+echo CORS_ALLOWED_ORIGINS=%CORS_ALLOWED_ORIGINS%
+echo SWAGGER_ENABLED=%SWAGGER_ENABLED%
+echo.
+echo NGINX_HTTP_PORT=8888
+echo NGINX_HTTPS_PORT=443
+echo SSL_CERT_DIR=./docker/nginx/ssl
+echo.
+echo HF_ENDPOINT=https://hf-mirror.com
 ) > .env
 
 echo   [OK] .env file created
@@ -194,9 +227,11 @@ echo   [OK] redis.conf updated
 echo   [OK] Updating grading-engine config.yaml...
 powershell -Command "(Get-Content 'grading-engine\config.yaml') -replace 'redis://:.*@redis:6379/1', 'redis://:%REDIS_PASSWORD%@redis:6379/1' | Set-Content 'grading-engine\config.yaml'"
 
-:: Update docker-compose.yml Celery broker URL
-echo   [OK] Updating docker-compose.yml...
-powershell -Command "(Get-Content 'docker-compose.yml') -replace 'redis://:.*@redis:6379/1', 'redis://:%REDIS_PASSWORD%@redis:6379/1' | Set-Content 'docker-compose.yml'"
+:: Update nginx.conf server_name if not localhost
+if not "%SERVER_DOMAIN%"=="localhost" (
+    echo   [OK] Updating nginx.conf server_name...
+    powershell -Command "(Get-Content 'docker\nginx\nginx.conf') -replace 'server_name localhost', 'server_name %SERVER_DOMAIN%' | Set-Content 'docker\nginx\nginx.conf'"
+)
 
 echo.
 
@@ -279,14 +314,22 @@ echo  ^|            Setup Complete!                               ^|
 echo  +============================================================+
 echo.
 echo   Access URLs:
-echo     Frontend:    http://localhost
-echo     API Docs:    http://localhost:8080/doc.html
-echo     Health:      http://localhost:8080/api/health
+echo     Frontend:    http://%SERVER_DOMAIN%:8888
+echo     API Docs:    http://%SERVER_DOMAIN%:8888/doc.html
+echo     Health:      http://%SERVER_DOMAIN%:8888/api/health
 echo.
-echo   Default accounts:
+echo   Default accounts (PLEASE CHANGE PASSWORDS AFTER FIRST LOGIN!):
 echo     Admin:       admin / 123456
 echo     Teacher:     teacher / 123456
 echo     Student:     student / 123456
+echo.
+echo   [IMPORTANT] Please change default passwords immediately!
+echo.
+echo   SSL/HTTPS:
+echo     To enable HTTPS, place your certificate files in:
+echo       docker/nginx/ssl/fullchain.pem
+echo       docker/nginx/ssl/privkey.pem
+echo     Then replace docker/nginx/nginx.conf with nginx-ssl.conf.template
 echo.
 echo   Useful commands:
 echo     View logs:   docker-compose logs -f

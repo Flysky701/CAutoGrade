@@ -33,9 +33,11 @@ grading-engine/chroma_data/
 # Docker volumes & env
 docker/mysql/data/
 docker/redis/data/
+docker/nginx/ssl/*.pem
+docker/nginx/ssl/*.key
 .env
 .env.*
-CONFIG
+/CONFIG
 
 # OS
 .DS_Store

@@ -79,9 +79,15 @@ public class UserController {
     }
 
     @PostMapping("/{id}/reset-password")
-    public Result<Void> resetPassword(@PathVariable Long id, @RequestParam String newPassword) {
-        userService.resetPassword(id, newPassword);
+    public Result<Void> resetPassword(@PathVariable Long id, @RequestBody ResetPasswordRequest request) {
+        userService.resetPassword(id, request.getNewPassword());
         return Result.success(null);
+    }
+
+    public static class ResetPasswordRequest {
+        private String newPassword;
+        public String getNewPassword() { return newPassword; }
+        public void setNewPassword(String newPassword) { this.newPassword = newPassword; }
     }
 
 

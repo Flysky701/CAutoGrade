@@ -19,6 +19,10 @@ spring:
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
 
+knife4j:
+  enable: ${SWAGGER_ENABLED:-false}
+  production: ${SWAGGER_ENABLED:-false}
+
 logging:
   level:
     root: info
