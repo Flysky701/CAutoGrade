@@ -32,6 +32,7 @@ class MySQLClient:
             gr.id            AS grading_result_id,
             gr.submission_id AS submission_id,
             s.code_content,
+            s.language,
             s.problem_id,
             s.student_id,
             s.assignment_id
@@ -155,5 +156,33 @@ class MySQLClient:
                 cur.execute(sql, (error_message[:2000], submission_id))
             conn.commit()
             logger.warning(f"Marked submission {submission_id} as FAILED")
+        finally:
+            conn.close()
+
+    def reset_stuck_processing(self, timeout_minutes=30):
+        sql = """
+        UPDATE grading_result SET grading_status = 'PENDING'
+        WHERE grading_status = 'PROCESSING'
+        AND graded_at IS NULL
+        AND submission_id NOT IN (
+            SELECT submission_id FROM (
+                SELECT submission_id FROM grading_result
+                WHERE grading_status = 'PROCESSING'
+                AND NOW() < DATE_ADD(COALESCE(graded_at, created_at), INTERVAL %s MINUTE)
+            ) AS active
+        )
+        """
+        conn = self.get_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    UPDATE grading_result SET grading_status = 'PENDING'
+                    WHERE grading_status = 'PROCESSING'
+                """)
+                count = cur.rowcount
+            conn.commit()
+            if count > 0:
+                logger.info(f"Reset {count} stuck PROCESSING tasks back to PENDING")
+            return count
         finally:
             conn.close()

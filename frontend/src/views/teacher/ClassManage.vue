@@ -1,12 +1,17 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox, ElTable, ElTableColumn, ElButton, ElDialog, ElForm, ElFormItem, ElInput, ElTag, ElTooltip, ElPopconfirm } from 'element-plus'
 import { CopyDocument } from '@element-plus/icons-vue'
 import { classApi, userApi } from '@/api'
 
 const route = useRoute()
+const router = useRouter()
 const courseId = Number(route.params.courseId)
+if (!courseId || isNaN(courseId)) {
+  ElMessage.error('无效的课程ID')
+  router.push('/teacher/courses')
+}
 const classes = ref<any[]>([])
 const loading = ref(false)
 

@@ -1,10 +1,12 @@
 package com.autograding.controller;
 
 import com.autograding.common.Result;
+import com.autograding.dto.hydro.HydroImportResult;
 import com.autograding.entity.Problem;
 import com.autograding.entity.User;
 import com.autograding.mapper.UserMapper;
 import com.autograding.security.SecurityUtils;
+import com.autograding.service.HydroImportService;
 import com.autograding.service.ProblemService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -14,7 +16,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -24,10 +28,13 @@ public class ProblemController {
 
     private final ProblemService problemService;
     private final UserMapper userMapper;
+    private final HydroImportService hydroImportService;
 
-    public ProblemController(ProblemService problemService, UserMapper userMapper) {
+    public ProblemController(ProblemService problemService, UserMapper userMapper,
+                             HydroImportService hydroImportService) {
         this.problemService = problemService;
         this.userMapper = userMapper;
+        this.hydroImportService = hydroImportService;
     }
 
     @PostMapping
@@ -63,6 +70,12 @@ public class ProblemController {
         Long creatorId = SecurityUtils.getCurrentUserId();
         problemService.deleteProblem(id, creatorId);
         return Result.success(null);
+    }
+
+    @PostMapping("/import/hydro")
+    public Result<HydroImportResult> importHydroProblems(@RequestParam("file") MultipartFile file) {
+        Long creatorId = SecurityUtils.getCurrentUserId();
+        return Result.success(hydroImportService.importFromZip(file, creatorId));
     }
 
 }

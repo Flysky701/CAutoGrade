@@ -21,7 +21,11 @@ public class SecurityUtils {
         if (auth == null || !auth.isAuthenticated()) {
             return null;
         }
-        return auth.getName();
+        String name = auth.getName();
+        if ("anonymousUser".equals(name)) {
+            return null;
+        }
+        return name;
     }
 
     public static Long getCurrentUserId() {

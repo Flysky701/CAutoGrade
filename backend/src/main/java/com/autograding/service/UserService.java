@@ -1,13 +1,19 @@
 package com.autograding.service;
 
 import com.autograding.common.BusinessException;
+import com.autograding.entity.ClassStudent;
+import com.autograding.entity.Course;
 import com.autograding.entity.User;
+import com.autograding.mapper.ClassMapper;
+import com.autograding.mapper.ClassStudentMapper;
+import com.autograding.mapper.CourseMapper;
 import com.autograding.mapper.UserMapper;
 import com.autograding.security.SecurityUtils;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -18,11 +24,18 @@ public class UserService {
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final OperationLogService operationLogService;
+    private final ClassStudentMapper classStudentMapper;
+    private final CourseMapper courseMapper;
+    private final ClassMapper classMapper;
 
-    public UserService(UserMapper userMapper, PasswordEncoder passwordEncoder, OperationLogService operationLogService) {
+    public UserService(UserMapper userMapper, PasswordEncoder passwordEncoder, OperationLogService operationLogService,
+                       ClassStudentMapper classStudentMapper, CourseMapper courseMapper, ClassMapper classMapper) {
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
         this.operationLogService = operationLogService;
+        this.classStudentMapper = classStudentMapper;
+        this.courseMapper = courseMapper;
+        this.classMapper = classMapper;
     }
 
     public User getUserById(Long id) {
@@ -179,6 +192,7 @@ public class UserService {
         return getUserById(userId);
     }
 
+    @Transactional
     public void deleteUser(Long userId) {
         User user = userMapper.selectById(userId);
         if (user == null || user.getDeleted() == 1) {
@@ -187,6 +201,41 @@ public class UserService {
         if (user.getRole() == User.Role.ADMIN) {
             throw new BusinessException("不能删除管理员账号");
         }
+
+        if (user.getRole() == User.Role.STUDENT) {
+            LambdaQueryWrapper<ClassStudent> csWrapper = new LambdaQueryWrapper<>();
+            csWrapper.eq(ClassStudent::getStudentId, userId);
+            classStudentMapper.delete(csWrapper);
+        }
+
+        if (user.getRole() == User.Role.TEACHER) {
+            LambdaQueryWrapper<Course> courseWrapper = new LambdaQueryWrapper<>();
+            courseWrapper.eq(Course::getTeacherId, userId)
+                         .eq(Course::getDeleted, 0);
+            List<Course> teacherCourses = courseMapper.selectList(courseWrapper);
+            for (Course course : teacherCourses) {
+                LambdaQueryWrapper<com.autograding.entity.Class> classWrapper = new LambdaQueryWrapper<>();
+                classWrapper.eq(com.autograding.entity.Class::getCourseId, course.getId())
+                            .eq(com.autograding.entity.Class::getDeleted, 0);
+                List<com.autograding.entity.Class> classes = classMapper.selectList(classWrapper);
+                for (com.autograding.entity.Class cls : classes) {
+                    LambdaQueryWrapper<ClassStudent> csWrapper = new LambdaQueryWrapper<>();
+                    csWrapper.eq(ClassStudent::getClassId, cls.getId());
+                    classStudentMapper.delete(csWrapper);
+                    LambdaUpdateWrapper<com.autograding.entity.Class> clsUpdate = new LambdaUpdateWrapper<com.autograding.entity.Class>()
+                            .eq(com.autograding.entity.Class::getId, cls.getId())
+                            .set(com.autograding.entity.Class::getDeleted, 1)
+                            .set(com.autograding.entity.Class::getUpdatedAt, LocalDateTime.now());
+                    classMapper.update(null, clsUpdate);
+                }
+                LambdaUpdateWrapper<Course> courseUpdate = new LambdaUpdateWrapper<Course>()
+                        .eq(Course::getId, course.getId())
+                        .set(Course::getDeleted, 1)
+                        .set(Course::getUpdatedAt, LocalDateTime.now());
+                courseMapper.update(null, courseUpdate);
+            }
+        }
+
         LambdaUpdateWrapper<User> wrapper = new LambdaUpdateWrapper<User>()
                 .eq(User::getId, userId)
                 .set(User::getDeleted, 1)

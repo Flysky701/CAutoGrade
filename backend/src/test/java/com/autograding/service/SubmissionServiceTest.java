@@ -54,7 +54,7 @@ class SubmissionServiceTest {
         when(gradingResultMapper.insert(any(GradingResult.class))).thenReturn(1);
 
         Submission result = submissionService.submitCode(1L, 1L, 1L,
-                "#include <stdio.h>\nint main() { return 0; }");
+                "#include <stdio.h>\nint main() { return 0; }", "c");
 
         assertNotNull(result);
         assertEquals(1L, result.getAssignmentId());
@@ -79,7 +79,7 @@ class SubmissionServiceTest {
         when(submissionMapper.insert(any(Submission.class))).thenReturn(1);
         when(gradingResultMapper.insert(any(GradingResult.class))).thenReturn(1);
 
-        Submission result = submissionService.submitCode(1L, 1L, 1L, "int main(){}");
+        Submission result = submissionService.submitCode(1L, 1L, 1L, "int main(){}", "c");
 
         assertEquals(1, result.getIsLate());
     }

@@ -46,8 +46,8 @@ onMounted(async () => {
       </el-table-column>
       <el-table-column label="分数" width="80" align="center">
         <template #default="{ row }">
-          <span v-if="row.totalScore != null" :class="`grade-${computeGrade(row.totalScore || row.score || 0).letter.toLowerCase()}`">
-            {{ row.totalScore || row.score || '—' }}
+          <span v-if="row.totalScore != null" :class="`grade-${computeGrade(row.totalScore ?? row.score ?? 0).letter.toLowerCase()}`">
+            {{ row.totalScore ?? row.score ?? '—' }}
           </span>
           <span v-else style="color:var(--text-placeholder)">—</span>
         </template>
@@ -55,9 +55,9 @@ onMounted(async () => {
       <el-table-column label="等级" width="70" align="center">
         <template #default="{ row }">
           <el-tag v-if="row.totalScore != null || row.score != null"
-            :type="(row.totalScore || row.score) >= 80 ? 'success' : (row.totalScore || row.score) >= 60 ? 'warning' : 'danger'"
+            :type="(row.totalScore ?? row.score ?? 0) >= 80 ? 'success' : (row.totalScore ?? row.score ?? 0) >= 60 ? 'warning' : 'danger'"
             size="small">
-            {{ computeGrade(row.totalScore || row.score || 0).letter }}
+            {{ computeGrade(row.totalScore ?? row.score ?? 0).letter }}
           </el-tag>
           <span v-else style="color:var(--text-placeholder)">—</span>
         </template>

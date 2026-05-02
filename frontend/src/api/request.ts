@@ -32,8 +32,9 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
+      localStorage.removeItem('role');
       window.location.href = '/login';
-      return Promise.reject(error);
+      return new Promise(() => {});
     }
     if (!error.config?._silent) {
       const msg = error.response?.data?.msg || error.message || '请求失败';

@@ -109,7 +109,7 @@ class SubmissionControllerTest {
     @Test
     void submitCode_shouldSucceed() throws Exception {
         setStudentAuth();
-        when(submissionService.submitCode(eq(5L), eq(20L), eq(100L), anyString()))
+        when(submissionService.submitCode(eq(5L), eq(20L), eq(100L), anyString(), any()))
                 .thenReturn(submission);
 
         String body = objectMapper.writeValueAsString(

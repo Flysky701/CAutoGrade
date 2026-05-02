@@ -7,8 +7,8 @@ USE autograding;
 -- ==========================================================
 CREATE TABLE `user` (
   `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
-  `username` VARCHAR(50) NOT NULL UNIQUE COMMENT '登录用户名',
-  `code` VARCHAR(50) UNIQUE COMMENT '学号/教工号',
+  `username` VARCHAR(50) NOT NULL COMMENT '登录用户名',
+  `code` VARCHAR(50) COMMENT '学号/教工号',
   `password_hash` VARCHAR(100) NOT NULL COMMENT '加密密码',
   `nickname` VARCHAR(50) COMMENT '昵称/真实姓名',
   `avatar` VARCHAR(255) COMMENT '头像URL',
@@ -16,7 +16,9 @@ CREATE TABLE `user` (
   `status` TINYINT(1) DEFAULT 1 COMMENT '状态 1：正常，0：禁用',
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `deleted` TINYINT(1) DEFAULT 0 COMMENT '逻辑删除标识'
+  `deleted` TINYINT(1) DEFAULT 0 COMMENT '逻辑删除标识',
+  UNIQUE INDEX `username` (`username`, `deleted`),
+  UNIQUE INDEX `code` (`code`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
 
 -- ==========================================================

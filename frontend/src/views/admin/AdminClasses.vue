@@ -34,7 +34,7 @@ onMounted(loadCourses);
 
 const handleDeleteClass = async (id: number) => {
   try {
-    await classApi.delete(id);
+    await classApi.adminDelete(id);
     ElMessage.success('已删除');
     loadClasses();
   } catch {

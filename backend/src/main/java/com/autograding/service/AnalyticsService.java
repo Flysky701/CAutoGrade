@@ -97,14 +97,18 @@ public class AnalyticsService {
                 .filter(Objects::nonNull)
                 .filter(s -> s.compareTo(BigDecimal.valueOf(60)) >= 0)
                 .count();
-        double passRate = results.isEmpty() ? 0.0 : (double) passedCount / results.size() * 100;
+        long nonNullCount = results.stream()
+                .map(this::getEffectiveScore)
+                .filter(Objects::nonNull)
+                .count();
+        double passRate = nonNullCount == 0 ? 0.0 : (double) passedCount / nonNullCount * 100;
 
         long excellentCount = results.stream()
                 .map(this::getEffectiveScore)
                 .filter(Objects::nonNull)
                 .filter(s -> s.compareTo(BigDecimal.valueOf(90)) >= 0)
                 .count();
-        double excellentRate = results.isEmpty() ? 0.0 : (double) excellentCount / results.size() * 100;
+        double excellentRate = nonNullCount == 0 ? 0.0 : (double) excellentCount / nonNullCount * 100;
 
         Map<String, Integer> scoreDistribution = new LinkedHashMap<>();
         scoreDistribution.put("0-59", 0);

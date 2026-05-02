@@ -94,12 +94,11 @@ public class SystemConfigService {
             throw new IllegalArgumentException("Unknown config key: " + key);
         }
         configCache.put(key, value);
-        if (dbAvailable) {
-            try {
-                persistToDb(key, value);
-            } catch (Exception e) {
-                log.warn("Failed to persist config key '{}': {}", key, e.getMessage());
-            }
+        try {
+            persistToDb(key, value);
+            dbAvailable = true;
+        } catch (Exception e) {
+            log.warn("Failed to persist config key '{}': {}", key, e.getMessage());
         }
     }
 

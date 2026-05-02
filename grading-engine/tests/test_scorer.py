@@ -50,3 +50,25 @@ class TestRuleScorer:
         result = self.scorer.score({})
         assert result["correctness_score"] == 0.0
         assert result["fallback"] is True
+
+    def test_compile_failure_lower_scores(self):
+        result = self.scorer.score({
+            "passed_cases": 0,
+            "total_cases": 3,
+            "compile_success": False,
+        })
+        assert result["correctness_score"] == 0.0
+        assert result["style_score"] == 20.0
+        assert result["efficiency_score"] == 20.0
+        expected_total = round(0.0 * 0.6 + 20.0 * 0.2 + 20.0 * 0.2, 2)
+        assert result["total_score"] == expected_total
+
+    def test_compile_success_normal_scores(self):
+        result = self.scorer.score({
+            "passed_cases": 3,
+            "total_cases": 3,
+            "compile_success": True,
+        })
+        assert result["correctness_score"] == 100.0
+        assert result["style_score"] == 80.0
+        assert result["efficiency_score"] == 80.0

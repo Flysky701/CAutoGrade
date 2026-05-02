@@ -41,14 +41,14 @@ public class SubmissionService {
     }
 
     @Transactional
-    public Submission submitCode(Long assignmentId, Long problemId, Long studentId, String code) {
+    public Submission submitCode(Long assignmentId, Long problemId, Long studentId, String code, String language) {
         Assignment assignment = assignmentMapper.selectById(assignmentId);
         if (assignment == null || assignment.getDeleted() == 1) {
             throw new BusinessException("作业不存在");
         }
 
         LocalDateTime now = LocalDateTime.now();
-        boolean isLate = now.isAfter(assignment.getEndTime());
+        boolean isLate = assignment.getEndTime() != null && now.isAfter(assignment.getEndTime());
 
         LambdaQueryWrapper<Submission> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Submission::getAssignmentId, assignmentId)
@@ -57,12 +57,14 @@ public class SubmissionService {
                .eq(Submission::getDeleted, 0);
         long submitCount = submissionMapper.selectCount(wrapper) + 1;
 
+        String lang = (language != null && !language.isBlank()) ? language : "c";
+
         Submission submission = new Submission();
         submission.setAssignmentId(assignmentId);
         submission.setProblemId(problemId);
         submission.setStudentId(studentId);
         submission.setCodeContent(code);
-        submission.setLanguage("c");
+        submission.setLanguage(lang);
         submission.setSubmitCount((int) submitCount);
         submission.setIsLate(isLate ? 1 : 0);
         submission.setSubmittedAt(now);

@@ -52,6 +52,30 @@ class StaticAnalyzer:
         lines = text.rstrip().split("\n")
         return "\n".join(line.rstrip() for line in lines)
 
+    def _compare_output(self, actual: str, expected: str) -> bool:
+        if actual == expected:
+            return True
+        actual_lines = actual.split("\n")
+        expected_lines = expected.split("\n")
+        if len(actual_lines) != len(expected_lines):
+            return False
+        for a_line, e_line in zip(actual_lines, expected_lines):
+            a_stripped = a_line.strip()
+            e_stripped = e_line.strip()
+            if a_stripped == e_stripped:
+                continue
+            try:
+                a_num = float(a_stripped)
+                e_num = float(e_stripped)
+                if abs(a_num - e_num) < 1e-6:
+                    continue
+                if abs(e_num) > 1e-9 and abs(a_num - e_num) / abs(e_num) < 1e-6:
+                    continue
+                return False
+            except ValueError:
+                return False
+        return True
+
     def _run_test_case(self, container_id: str, test_case: dict) -> TestCaseResult:
         stdin = test_case.get("input_data") or test_case.get("input") or ""
         expected = test_case.get("expected_output") or test_case.get("expected") or ""
@@ -61,7 +85,7 @@ class StaticAnalyzer:
         actual = self._normalize_output(result.get("stdout", ""))
         expected_normalized = self._normalize_output(expected)
 
-        passed = actual == expected_normalized
+        passed = self._compare_output(actual, expected_normalized)
 
         if not passed:
             display = result.get("stderr", "") or result.get("stdout", "")
@@ -77,11 +101,11 @@ class StaticAnalyzer:
             weight=test_case.get("weight", 10),
         )
 
-    def analyze(self, code_content: str, test_cases: list[dict] = None) -> StaticAnalysisResult:
+    def analyze(self, code_content: str, test_cases: list[dict] = None, language: str = "c") -> StaticAnalysisResult:
         test_cases = test_cases or []
         warnings = self._check_code_quality(code_content)
 
-        compile_result = self.sandbox.compile(code_content)
+        compile_result = self.sandbox.compile(code_content, language=language)
         container_id = compile_result.get("container_id")
 
         if not compile_result["success"]:

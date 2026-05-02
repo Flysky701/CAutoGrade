@@ -4,8 +4,8 @@ redis:
 llm:
   provider: deepseek
   base_url: https://api.deepseek.com/v1
-  api_key: sk-f32e76b601e44ccc889ceb169bd21d0f
-  model: deepseek-v4-flash
+  api_key: ""
+  model: deepseek-chat
   timeout: 60
   max_tokens: 128000
 

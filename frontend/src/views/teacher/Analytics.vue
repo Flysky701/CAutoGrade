@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, nextTick } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { ElMessage, ElSelect, ElOption, ElCard, ElRow, ElCol, ElStatistic, ElTable, ElTableColumn, ElProgress } from 'element-plus'
 import { analyticsApi, courseApi, classApi, assignmentApi } from '@/api'
 import * as echarts from 'echarts'
@@ -95,7 +95,23 @@ watch(analyticsData, () => {
   errorTop10.value = (analyticsData.value?.errorTop10 || []).slice(0, 10)
 })
 
-onMounted(loadMeta)
+const handleResize = () => {
+  scoreChart?.resize()
+  knowledgeChart?.resize()
+}
+
+onMounted(() => {
+  loadMeta()
+  window.addEventListener('resize', handleResize)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize)
+  scoreChart?.dispose()
+  scoreChart = null
+  knowledgeChart?.dispose()
+  knowledgeChart = null
+})
 </script>
 
 <template>

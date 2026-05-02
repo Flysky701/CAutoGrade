@@ -3,8 +3,12 @@ package com.autograding.service;
 import com.autograding.common.BusinessException;
 import com.autograding.dto.course.CourseCreateRequest;
 import com.autograding.dto.course.CourseResponse;
+import com.autograding.entity.Class;
+import com.autograding.entity.ClassStudent;
 import com.autograding.entity.Course;
 import com.autograding.entity.User;
+import com.autograding.mapper.ClassMapper;
+import com.autograding.mapper.ClassStudentMapper;
 import com.autograding.mapper.CourseMapper;
 import com.autograding.mapper.UserMapper;
 import com.autograding.security.SecurityUtils;
@@ -22,11 +26,16 @@ public class CourseService {
     private final CourseMapper courseMapper;
     private final UserMapper userMapper;
     private final OperationLogService operationLogService;
+    private final ClassMapper classMapper;
+    private final ClassStudentMapper classStudentMapper;
 
-    public CourseService(CourseMapper courseMapper, UserMapper userMapper, OperationLogService operationLogService) {
+    public CourseService(CourseMapper courseMapper, UserMapper userMapper, OperationLogService operationLogService,
+                         ClassMapper classMapper, ClassStudentMapper classStudentMapper) {
         this.courseMapper = courseMapper;
         this.userMapper = userMapper;
         this.operationLogService = operationLogService;
+        this.classMapper = classMapper;
+        this.classStudentMapper = classStudentMapper;
     }
 
     public CourseResponse createCourse(CourseCreateRequest request, Long teacherId) {
@@ -128,6 +137,37 @@ public class CourseService {
         courseMapper.update(null, wrapper);
         operationLogService.logOperation(SecurityUtils.getCurrentUserId(), "DELETE_COURSE", "COURSE", id,
                 "删除课程", null);
+    }
+
+    public void adminDeleteCourse(Long id) {
+        Course course = courseMapper.selectById(id);
+        if (course == null || course.getDeleted() == 1) {
+            throw new BusinessException("课程不存在");
+        }
+
+        LambdaQueryWrapper<Class> classWrapper = new LambdaQueryWrapper<>();
+        classWrapper.eq(Class::getCourseId, id)
+                    .eq(Class::getDeleted, 0);
+        List<Class> classes = classMapper.selectList(classWrapper);
+        for (Class cls : classes) {
+            LambdaQueryWrapper<ClassStudent> csWrapper = new LambdaQueryWrapper<>();
+            csWrapper.eq(ClassStudent::getClassId, cls.getId());
+            classStudentMapper.delete(csWrapper);
+
+            LambdaUpdateWrapper<Class> clsUpdate = new LambdaUpdateWrapper<Class>()
+                    .eq(Class::getId, cls.getId())
+                    .set(Class::getDeleted, 1)
+                    .set(Class::getUpdatedAt, LocalDateTime.now());
+            classMapper.update(null, clsUpdate);
+        }
+
+        LambdaUpdateWrapper<Course> wrapper = new LambdaUpdateWrapper<Course>()
+                .eq(Course::getId, id)
+                .set(Course::getDeleted, 1)
+                .set(Course::getUpdatedAt, LocalDateTime.now());
+        courseMapper.update(null, wrapper);
+        operationLogService.logOperation(SecurityUtils.getCurrentUserId(), "ADMIN_DELETE_COURSE", "COURSE", id,
+                "管理员删除课程（含关联班级）", null);
     }
 
     private CourseResponse enrichAndConvert(Course course) {

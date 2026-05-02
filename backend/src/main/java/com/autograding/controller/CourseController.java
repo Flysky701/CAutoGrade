@@ -8,6 +8,7 @@ import com.autograding.mapper.UserMapper;
 import com.autograding.security.SecurityUtils;
 import com.autograding.service.CourseService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -68,6 +69,13 @@ public class CourseController {
     public Result<Void> deleteCourse(@PathVariable Long id) {
         Long teacherId = SecurityUtils.getCurrentUserId();
         courseService.deleteCourse(id, teacherId);
+        return Result.success(null);
+    }
+
+    @DeleteMapping("/{id}/admin")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Result<Void> adminDeleteCourse(@PathVariable Long id) {
+        courseService.adminDeleteCourse(id);
         return Result.success(null);
     }
 

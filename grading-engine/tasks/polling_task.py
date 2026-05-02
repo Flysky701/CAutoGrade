@@ -45,6 +45,7 @@ def _send_notification(submission_id, student_id, score):
 
 def poll_and_grade():
     db = MySQLClient()
+    db.reset_stuck_processing()
     pending = db.fetch_pending_grading_results(limit=10)
 
     if not pending:
@@ -76,7 +77,7 @@ def poll_and_grade():
                     "id": tc["id"],
                     "input_data": tc["input_data"],
                     "expected_output": tc["expected_output"],
-                    "weight": tc.get("weight", 1),
+                    "weight": tc.get("weight", 10),
                     "is_hidden": bool(tc.get("is_hidden", 0)),
                 }
                 for tc in test_cases
@@ -89,6 +90,7 @@ def poll_and_grade():
                 test_cases=tc_list,
                 problem_description=problem.get("description", ""),
                 knowledge_tags=knowledge_tags,
+                language=row.get("language", "c"),
             )
 
             formatted = format_grading_result(raw_result)

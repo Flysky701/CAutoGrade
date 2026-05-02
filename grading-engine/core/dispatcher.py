@@ -19,11 +19,12 @@ class Dispatcher:
 
     def grade(self, submission_id: int, code_content: str, problem_id: int,
               test_cases: list[dict] = None,
-              problem_description: str = "", knowledge_tags: list[str] = None) -> dict:
+              problem_description: str = "", knowledge_tags: list[str] = None,
+              language: str = "c") -> dict:
         test_cases = test_cases or []
         knowledge_tags = knowledge_tags or []
 
-        static_result = self._run_static_analysis(code_content, test_cases)
+        static_result = self._run_static_analysis(code_content, test_cases, language=language)
 
         test_case_summary = []
         for r in static_result.test_case_results:
@@ -64,9 +65,9 @@ class Dispatcher:
             "fallback_score": fallback_score,
         }
 
-    def _run_static_analysis(self, code_content: str, test_cases: list[dict]):
+    def _run_static_analysis(self, code_content: str, test_cases: list[dict], language: str = "c"):
         try:
-            return self.static_analyzer.analyze(code_content, test_cases)
+            return self.static_analyzer.analyze(code_content, test_cases, language=language)
         except Exception as e:
             logger.error(f"Static analysis failed, using fallback: {e}")
             from core.static_analyzer import StaticAnalysisResult

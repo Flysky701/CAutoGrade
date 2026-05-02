@@ -149,7 +149,7 @@ describe('API Layer Tests', () => {
   describe('assignmentApi', () => {
     it('getById should GET /assignments/1', () => {
       assignmentApi.getById(1)
-      expect(mockAxios.get).toHaveBeenCalledWith('/assignments/1')
+      expect(mockAxios.get).toHaveBeenCalledWith('/assignments/1', undefined)
     })
 
     it('create should POST /assignments', () => {

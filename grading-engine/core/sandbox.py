@@ -116,10 +116,13 @@ class SandboxRunner:
 
         return container
 
-    def compile(self, code_content: str) -> dict:
+    def compile(self, code_content: str, language: str = "c") -> dict:
+        ext = "cpp" if language in ("cpp", "c++", "C++") else "c"
+        compiler = "g++" if ext == "cpp" else "gcc"
+        src_file = f"main.{ext}"
         compile_script = (
-            "gcc -Wall -O2 -o /code/a.out /code/main.c "
-            "2>/code/compile_error.txt && echo 'OK' || echo 'FAIL'"
+            f"{compiler} -Wall -O2 -o /code/a.out /code/{src_file} "
+            f"2>/code/compile_error.txt && echo 'OK' || echo 'FAIL'"
         )
 
         container = None
@@ -135,9 +138,9 @@ class SandboxRunner:
                     "container_id": None,
                 }
 
-            tar_data = _make_tar_bytes({"main.c": code_content})
+            tar_data = _make_tar_bytes({src_file: code_content})
             container.put_archive("/tmp", tar_data)
-            container.exec_run(cmd=["sh", "-c", "mkdir -p /code && cp /tmp/main.c /code/main.c"])
+            container.exec_run(cmd=["sh", "-c", f"mkdir -p /code && cp /tmp/{src_file} /code/{src_file}"])
 
             exec_result = container.exec_run(
                 cmd=["sh", "-c", compile_script],
@@ -211,15 +214,16 @@ class SandboxRunner:
             run_script = (
                 f"ulimit -t {self.run_timeout} && "
                 f"ulimit -v {self.memory_limit_mb * 1024} && "
-                f"/usr/bin/time -f '%e %M' -o /code/time.txt "
                 f"/code/a.out </code/stdin.txt > /code/stdout.txt 2>/code/stderr.txt; "
                 f"echo $?"
             )
 
+            start = time.time()
             exec_result = container.exec_run(
                 cmd=["sh", "-c", run_script],
                 workdir="/code",
             )
+            elapsed_ms = int((time.time() - start) * 1000)
 
             exit_code = exec_result.exit_code
 
@@ -239,17 +243,8 @@ class SandboxRunner:
             except Exception:
                 pass
 
-            time_ms = 0
+            time_ms = elapsed_ms
             memory_kb = 0
-            try:
-                bits, _ = container.get_archive("/code/time.txt")
-                time_content = _extract_file_from_archive(b"".join(bits), "time.txt").strip()
-                parts = time_content.split()
-                if len(parts) >= 2:
-                    time_ms = int(float(parts[0]) * 1000)
-                    memory_kb = int(parts[1])
-            except Exception:
-                pass
 
             return {
                 "exit_code": exit_code,

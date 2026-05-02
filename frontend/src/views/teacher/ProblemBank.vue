@@ -27,6 +27,10 @@ const problemTab = ref('mine')
 const publicProblems = ref<any[]>([])
 const publicLoading = ref(false)
 
+const importing = ref(false)
+const importResult = ref<any>(null)
+const showImportResult = ref(false)
+
 const loadProblems = async () => {
   loading.value = true
   try {
@@ -201,6 +205,28 @@ const handleDeleteTestCase = async (id: number) => {
   }
 }
 
+const triggerHydroImport = () => {
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.accept = '.zip'
+  input.onchange = async (e: Event) => {
+    const file = (e.target as HTMLInputElement).files?.[0]
+    if (!file) return
+    importing.value = true
+    try {
+      const res = (await problemApi.importHydro(file)) as any
+      importResult.value = res.data
+      showImportResult.value = true
+      loadProblems()
+    } catch (err: any) {
+      ElMessage.error(err?.response?.data?.msg || err?.message || '导入失败')
+    } finally {
+      importing.value = false
+    }
+  }
+  input.click()
+}
+
 onMounted(() => { loadProblems(); loadPublicProblems() })
 </script>
 
@@ -208,7 +234,10 @@ onMounted(() => { loadProblems(); loadPublicProblems() })
   <div class="problem-bank">
     <div class="page-header">
       <h2>题库管理</h2>
-      <el-button v-if="problemTab === 'mine'" type="primary" @click="openCreateProblem">创建题目</el-button>
+      <div v-if="problemTab === 'mine'" style="display:flex;gap:8px">
+        <el-button type="primary" @click="openCreateProblem">创建题目</el-button>
+        <el-button :loading="importing" @click="triggerHydroImport">导入 Hydro 题目</el-button>
+      </div>
     </div>
 
     <el-tabs v-model="problemTab" style="margin-bottom:12px" @tab-change="(tab:any) => { if (tab === 'public') loadPublicProblems() }">
@@ -339,6 +368,37 @@ onMounted(() => { loadProblems(); loadPublicProblems() })
             </el-button>
           </el-form-item>
         </el-form>
+      </template>
+    </el-dialog>
+
+    <!-- Hydro 导入结果弹窗 -->
+    <el-dialog v-model="showImportResult" title="导入结果" width="640px">
+      <template v-if="importResult">
+        <div style="margin-bottom:16px;display:flex;gap:24px">
+          <el-tag type="info">共发现 {{ importResult.totalFound }} 题</el-tag>
+          <el-tag type="success">成功 {{ importResult.successCount }} 题</el-tag>
+          <el-tag v-if="importResult.failCount > 0" type="danger">失败 {{ importResult.failCount }} 题</el-tag>
+        </div>
+        <el-table :data="importResult.details" size="small" stripe>
+          <el-table-column prop="title" label="题目标题" min-width="200" />
+          <el-table-column prop="testCaseCount" label="测试用例" width="100" align="center" />
+          <el-table-column prop="imageCount" label="图片" width="80" align="center" />
+          <el-table-column label="状态" width="100" align="center">
+            <template #default="{ row }">
+              <el-tag :type="row.success ? 'success' : 'danger'" size="small">
+                {{ row.success ? '成功' : '失败' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="errorMessage" label="错误信息" min-width="180">
+            <template #default="{ row }">
+              <span v-if="row.errorMessage" style="color:#f56c6c;font-size:12px">{{ row.errorMessage }}</span>
+            </template>
+          </el-table-column>
+        </el-table>
+      </template>
+      <template #footer>
+        <el-button type="primary" @click="showImportResult = false">确定</el-button>
       </template>
     </el-dialog>
   </div>

@@ -21,7 +21,7 @@ const statusTagType = (s: string) => s === 'ACTIVE' ? 'success' : 'info';
 
 const handleDelete = async (id: number) => {
   try {
-    await courseApi.delete(id);
+    await courseApi.adminDelete(id);
     ElMessage.success('已删除');
     loadCourses();
   } catch {

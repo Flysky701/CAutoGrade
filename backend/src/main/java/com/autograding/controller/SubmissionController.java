@@ -34,7 +34,8 @@ public class SubmissionController {
                 request.getAssignmentId(),
                 request.getProblemId(),
                 studentId,
-                request.getCode()
+                request.getCode(),
+                request.getLanguage()
         ));
     }
 
@@ -96,6 +97,7 @@ public class SubmissionController {
         private Long assignmentId;
         private Long problemId;
         private String code;
+        private String language;
 
         public Long getAssignmentId() { return assignmentId; }
         public void setAssignmentId(Long assignmentId) { this.assignmentId = assignmentId; }
@@ -103,5 +105,7 @@ public class SubmissionController {
         public void setProblemId(Long problemId) { this.problemId = problemId; }
         public String getCode() { return code; }
         public void setCode(String code) { this.code = code; }
+        public String getLanguage() { return language; }
+        public void setLanguage(String language) { this.language = language; }
     }
 }

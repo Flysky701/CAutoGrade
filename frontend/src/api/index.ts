@@ -32,7 +32,7 @@ export const userApi = {
   disableUser: (id: number) => api.post(`/users/${id}/disable`),
   enableUser: (id: number) => api.post(`/users/${id}/enable`),
   resetPassword: (id: number, newPassword: string) =>
-    api.post(`/users/${id}/reset-password?newPassword=${newPassword}`),
+    api.post(`/users/${id}/reset-password`, { newPassword }),
 };
 
 export const adminApi = {
@@ -51,6 +51,7 @@ export const courseApi = {
   create: (data: any) => api.post('/courses', data),
   update: (id: number, data: any) => api.put(`/courses/${id}`, data),
   delete: (id: number) => api.delete(`/courses/${id}`),
+  adminDelete: (id: number) => api.delete(`/courses/${id}/admin`),
 };
 
 export const classApi = {
@@ -65,6 +66,7 @@ export const classApi = {
   removeStudent: (classId: number, studentId: number) =>
     api.delete(`/classes/${classId}/students/${studentId}`),
   delete: (classId: number) => api.delete(`/classes/${classId}`),
+  adminDelete: (classId: number) => api.delete(`/classes/${classId}/admin`),
 };
 
 export const assignmentApi = {
@@ -87,6 +89,14 @@ export const problemApi = {
   create: (data: any) => api.post('/problems', data),
   update: (id: number, data: any) => api.put(`/problems/${id}`, data),
   delete: (id: number) => api.delete(`/problems/${id}`),
+  importHydro: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/problems/import/hydro', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 300000,
+    });
+  },
 };
 
 export const testCaseApi = {

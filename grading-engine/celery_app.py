@@ -24,10 +24,15 @@ app.conf.update(
         'tasks.grading_task.grade_code': {'queue': 'grading_queue'},
     },
     task_serializer='json',
-    accept_content=['json'], 
+    accept_content=['json'],
     result_serializer='json',
     timezone='Asia/Shanghai',
     enable_utc=True,
+    task_acks_late=True,
+    worker_prefetch_multiplier=1,
+    task_time_limit=300,
+    task_soft_time_limit=240,
+    broker_connection_retry_on_startup=True,
 )
 
 if __name__ == '__main__':

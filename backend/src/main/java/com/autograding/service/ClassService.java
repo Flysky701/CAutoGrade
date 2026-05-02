@@ -208,9 +208,16 @@ public class ClassService {
         }
 
         Course course = courseMapper.selectById(cls.getCourseId());
+        if (course == null || course.getDeleted() == 1) {
+            throw new BusinessException("课程不存在或已删除");
+        }
         if (!course.getTeacherId().equals(teacherId)) {
             throw new BusinessException("无权限删除此班级");
         }
+
+        LambdaQueryWrapper<ClassStudent> csWrapper = new LambdaQueryWrapper<>();
+        csWrapper.eq(ClassStudent::getClassId, id);
+        classStudentMapper.delete(csWrapper);
 
         LambdaUpdateWrapper<Class> wrapper = new LambdaUpdateWrapper<Class>()
                 .eq(Class::getId, id)
@@ -219,6 +226,25 @@ public class ClassService {
         classMapper.update(null, wrapper);
         operationLogService.logOperation(SecurityUtils.getCurrentUserId(), "DELETE_CLASS", "CLASS", id,
                 "删除班级", null);
+    }
+
+    public void adminDeleteClass(Long id) {
+        Class cls = classMapper.selectById(id);
+        if (cls == null || cls.getDeleted() == 1) {
+            throw new BusinessException("班级不存在");
+        }
+
+        LambdaQueryWrapper<ClassStudent> csWrapper = new LambdaQueryWrapper<>();
+        csWrapper.eq(ClassStudent::getClassId, id);
+        classStudentMapper.delete(csWrapper);
+
+        LambdaUpdateWrapper<Class> wrapper = new LambdaUpdateWrapper<Class>()
+                .eq(Class::getId, id)
+                .set(Class::getDeleted, 1)
+                .set(Class::getUpdatedAt, LocalDateTime.now());
+        classMapper.update(null, wrapper);
+        operationLogService.logOperation(SecurityUtils.getCurrentUserId(), "ADMIN_DELETE_CLASS", "CLASS", id,
+                "管理员删除班级", null);
     }
 
     private String generateInviteCode() {

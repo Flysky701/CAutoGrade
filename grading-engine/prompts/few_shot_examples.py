@@ -81,4 +81,66 @@ int main() {
             ],
         },
     },
+    {
+        "code": """#include <stdio.h>
+#include <string.h>
+int main() {
+    char s[1001];
+    int n, i, cnt = 0;
+    scanf("%d", &n);
+    while (n--) {
+        scanf("%s", s);
+        int len = strlen(s);
+        int valid = 1;
+        for (i = 0; i < len / 2; i++) {
+            if (s[i] != s[len - 1 - i]) {
+                valid = 0;
+                break;
+            }
+        }
+        if (valid) cnt++;
+    }
+    printf("%d\\n", cnt);
+    return 0;
+}""",
+        "problem": "给定n个字符串，统计其中回文串的数量",
+        "static_result": {
+            "compile_success": True,
+            "passed_cases": 5,
+            "total_cases": 5,
+            "warnings": ["Use of unsafe scanf with %s (buffer overflow risk)"],
+        },
+        "expected_output": {
+            "total_score": 82,
+            "correctness_score": 100,
+            "style_score": 55,
+            "efficiency_score": 70,
+            "summary": "代码功能完全正确，通过了全部5个测试用例。使用了不安全的scanf %s读取字符串，存在缓冲区溢出风险。变量命名基本合理，但缺少注释。算法效率一般，对于长字符串可以提前终止比较。",
+            "line_annotations": [
+                {"line": 5, "severity": "warning", "message": "使用scanf %s读取字符串不安全，建议改用fgets或限制读取长度%1000s"},
+                {"line": 8, "severity": "info", "message": "可以添加对字符串长度的判断，空串和单字符串也是回文"},
+                {"line": 10, "severity": "praise", "message": "回文判断逻辑正确，使用了双指针从两端向中间比较"},
+            ],
+            "improvements": [
+                {
+                    "priority": "high",
+                    "category": "style",
+                    "title": "使用安全的字符串输入",
+                    "detail": "将scanf(\"%s\", s)改为fgets(s, sizeof(s), stdin)并去除末尾换行，或至少使用scanf(\"%1000s\", s)限制长度。",
+                },
+                {
+                    "priority": "medium",
+                    "category": "efficiency",
+                    "title": "优化回文判断",
+                    "detail": "当前算法O(n*len)已经合理，但可以在发现不匹配时立即break（已实现），这一点做得不错。",
+                },
+                {
+                    "priority": "low",
+                    "category": "style",
+                    "title": "添加注释",
+                    "detail": "在关键逻辑处添加注释说明，如回文判断的思路、变量含义等。",
+                },
+            ],
+        },
+    },
 ]

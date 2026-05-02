@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElSelect, ElOption } from 'element-plus'
 import { submissionApi, assignmentApi, problemApi } from '@/api'
 import CodeEditor from '@/components/CodeEditor/index.vue'
 
@@ -11,8 +11,25 @@ const assignmentId = Number(route.params.assignmentId)
 const problemId = Number(route.params.problemId)
 const assignment = ref<any>(null)
 const problem = ref<any>(null)
-const code = ref('#include <stdio.h>\n\nint main() {\n    \n    return 0;\n}')
+const language = ref('c')
 const loading = ref(false)
+
+const codeTemplates: Record<string, string> = {
+  c: '#include <stdio.h>\n\nint main() {\n    \n    return 0;\n}',
+  cpp: '#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    \n    return 0;\n}',
+}
+
+const code = ref(codeTemplates['c'])
+
+const editorLanguage = computed(() => language.value === 'cpp' ? 'cpp' : 'c')
+
+const onLanguageChange = (val: string) => {
+  if (val === 'cpp' && code.value === codeTemplates['c']) {
+    code.value = codeTemplates['cpp']
+  } else if (val === 'c' && code.value === codeTemplates['cpp']) {
+    code.value = codeTemplates['c']
+  }
+}
 
 onMounted(async () => {
   try {
@@ -32,7 +49,7 @@ const handleSubmit = async () => {
   }
   loading.value = true
   try {
-    await submissionApi.submit({ assignmentId, problemId, code: code.value })
+    await submissionApi.submit({ assignmentId, problemId, code: code.value, language: language.value })
     ElMessage.success('提交成功，正在批阅...')
     router.push('/student/history')
   } catch (e: any) {
@@ -47,7 +64,13 @@ const handleSubmit = async () => {
   <div class="code-submit">
     <div class="page-header">
       <h2>代码提交</h2>
-      <el-button type="primary" :loading="loading" @click="handleSubmit">提交代码</el-button>
+      <div style="display:flex;gap:12px;align-items:center">
+        <el-select v-model="language" style="width:120px" @change="onLanguageChange">
+          <el-option label="C 语言" value="c" />
+          <el-option label="C++" value="cpp" />
+        </el-select>
+        <el-button type="primary" :loading="loading" @click="handleSubmit">提交代码</el-button>
+      </div>
     </div>
 
     <el-card v-if="problem" class="problem-card" shadow="hover">
@@ -60,7 +83,7 @@ const handleSubmit = async () => {
       <div style="white-space:pre-wrap;font-size:var(--font-size-sm);color:var(--text-secondary)">{{ problem.description }}</div>
     </el-card>
 
-    <CodeEditor v-model="code" language="c" style="margin-top:var(--space-4)" />
+    <CodeEditor v-model="code" :language="editorLanguage" style="margin-top:var(--space-4)" />
   </div>
 </template>
 

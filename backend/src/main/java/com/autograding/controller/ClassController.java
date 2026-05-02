@@ -8,6 +8,7 @@ import com.autograding.mapper.UserMapper;
 import com.autograding.security.SecurityUtils;
 import com.autograding.service.ClassService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -32,8 +33,9 @@ public class ClassController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('TEACHER')")
     public Result<ClassResponse> createClass(@RequestBody ClassCreateRequest request) {
-        Long teacherId = SecurityUtils.getCurrentUserId();
+        Long teacherId = SecurityUtils.requireCurrentUserId();
         return Result.success(classService.createClass(request, teacherId));
     }
 
@@ -44,7 +46,7 @@ public class ClassController {
 
     @GetMapping("/teacher")
     public Result<List<ClassResponse>> getMyClasses() {
-        Long teacherId = SecurityUtils.getCurrentUserId();
+        Long teacherId = SecurityUtils.requireCurrentUserId();
         return Result.success(classService.getClassesByTeacher(teacherId));
     }
 
@@ -55,13 +57,13 @@ public class ClassController {
 
     @PostMapping("/join")
     public Result<ClassResponse> joinClass(@RequestParam String inviteCode) {
-        Long studentId = SecurityUtils.getCurrentUserId();
+        Long studentId = SecurityUtils.requireCurrentUserId();
         return Result.success(classService.joinClassByCode(inviteCode, studentId));
     }
 
     @GetMapping("/student")
     public Result<List<ClassResponse>> getMyClassesAsStudent() {
-        Long studentId = SecurityUtils.getCurrentUserId();
+        Long studentId = SecurityUtils.requireCurrentUserId();
         return Result.success(classService.getClassesByStudent(studentId));
     }
 
@@ -84,8 +86,15 @@ public class ClassController {
 
     @DeleteMapping("/{id}")
     public Result<Void> deleteClass(@PathVariable Long id) {
-        Long teacherId = SecurityUtils.getCurrentUserId();
+        Long teacherId = SecurityUtils.requireCurrentUserId();
         classService.deleteClass(id, teacherId);
+        return Result.success(null);
+    }
+
+    @DeleteMapping("/{id}/admin")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Result<Void> adminDeleteClass(@PathVariable Long id) {
+        classService.adminDeleteClass(id);
         return Result.success(null);
     }
 
