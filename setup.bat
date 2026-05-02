@@ -1,15 +1,13 @@
 @echo off
-chcp 65001 >nul 2>&1
-chcp 936 >nul 2>&1
 setlocal enabledelayedexpansion
 
 cd /d "%~dp0"
 
 echo.
-echo  ╔══════════════════════════════════════════════════════════╗
-echo  ║       CAutoGrade - One-Click Setup Wizard               ║
-echo  ║       C语言作业自动批阅系统 - 一键配置向导               ║
-echo  ╚══════════════════════════════════════════════════════════╝
+echo  +============================================================+
+echo  ^|       CAutoGrade - One-Click Setup Wizard                ^|
+echo  ^|       C语言作业自动批阅系统 - 一键配置向导                 ^|
+echo  +============================================================+
 echo.
 
 :: ============================================================
@@ -65,21 +63,21 @@ echo.
 
 if exist ".env" (
     echo   Found existing .env file:
-    echo   ─────────────────────────────────
-    for /f "tokens=1,* delims==" %%a in (.env) do (
-        if "%%a"=="DEEPSEEK_API_KEY" (
-            echo   %%a=****%%~zb****
-        ) else if "%%a"=="MYSQL_PASSWORD" (
+    echo   ------------------------------------
+    for /f "usebackq tokens=1,* delims==" %%a in (".env") do (
+        if /i "%%a"=="DEEPSEEK_API_KEY" (
+            echo   %%a=****
+        ) else if /i "%%a"=="MYSQL_PASSWORD" (
             echo   %%a=********
-        ) else if "%%a"=="REDIS_PASSWORD" (
+        ) else if /i "%%a"=="REDIS_PASSWORD" (
             echo   %%a=********
-        ) else if "%%a"=="JWT_SECRET" (
+        ) else if /i "%%a"=="JWT_SECRET" (
             echo   %%a=********
         ) else (
             echo   %%a=%%b
         )
     )
-    echo   ─────────────────────────────────
+    echo   ------------------------------------
     echo.
     set /p "RECONFIG=Reconfigure? (y/N): "
     if /i not "!RECONFIG!"=="y" (
@@ -107,7 +105,6 @@ if "%MYSQL_PASSWORD%"=="" set "MYSQL_PASSWORD=autograding2026"
 set "JWT_SECRET="
 set /p "JWT_SECRET=  [2/4] JWT Secret Key (min 32 chars) [auto-generated]: "
 if "%JWT_SECRET%"=="" (
-    :: Generate a simple JWT secret from timestamp + random
     set "JWT_SECRET=YXV0b2dyYWRpbmctand0LXNlY3JldC1rZXktZm9yLXByb2R1Y3Rpb24tMjAyNi1zZWN1cmU"
 )
 
@@ -126,12 +123,12 @@ if "%REDIS_PASSWORD%"=="" set "REDIS_PASSWORD=%MYSQL_PASSWORD%"
 
 echo.
 echo   Configuration summary:
-echo   ─────────────────────────────────
+echo   ------------------------------------
 echo   MySQL Password:  ********
 echo   JWT Secret:      ********
 echo   DeepSeek API:    ********
 echo   Redis Password:  ********
-echo   ─────────────────────────────────
+echo   ------------------------------------
 echo.
 set /p "CONFIRM=  Confirm and save? (Y/n): "
 if /i "!CONFIRM!"=="n" (
@@ -277,9 +274,9 @@ echo   Waiting for MySQL initialization...
 timeout /t 20 /nobreak >nul
 
 echo.
-echo  ╔══════════════════════════════════════════════════════════╗
-echo  ║            Setup Complete!                               ║
-echo  ╚══════════════════════════════════════════════════════════╝
+echo  +============================================================+
+echo  ^|            Setup Complete!                               ^|
+echo  +============================================================+
 echo.
 echo   Access URLs:
 echo     Frontend:    http://localhost
