@@ -10,7 +10,7 @@ llm:
   max_tokens: 128000
 
 docker:
-  mirror_url: xw4fis2eywyg7vamgy.xuanyuan.run
+  mirror_url: ""
 
 runtime:
   compile_timeout_seconds: 5

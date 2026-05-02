@@ -49,3 +49,5 @@ Qustions/
 # Temporary files
 LLM.md
 build-log.txt
+*output*.txt
+测试.txt
