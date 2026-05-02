@@ -1,13 +1,11 @@
-version: '3.8'
-
 services:
   mysql:
     image: mysql:8.0
     container_name: autograding-mysql
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: autograding
+      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-autograding}
       TZ: Asia/Shanghai
     ports:
       - "3306:3306"
@@ -57,6 +55,8 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
       SPRING_PROFILES_ACTIVE: prod
     depends_on:
       - mysql
@@ -73,7 +73,7 @@ services:
       - hf-cache:/app/.cache/huggingface
     environment:
       DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
-      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_BROKER_URL: redis://:autograding2026@redis:6379/1
       CHROMA_HOST: chromadb
       CHROMA_PORT: 8000
       MYSQL_HOST: mysql

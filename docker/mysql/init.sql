@@ -249,9 +249,9 @@ CREATE TABLE `system_config` (
 -- ==========================================================
 -- 插入默认用户 (密码请通过环境变量或首次登录后修改)
 INSERT INTO `user` (`username`, `password_hash`, `code`, `nickname`, `role`) VALUES
-  ('admin',   '$2a$10$rksYpyhDhQWYv0hbD.fsNOOhynKOw/4TBFHb/NSgZsotML4DuRKdy', 'ADMIN001', '系统管理员', 'ADMIN'),
-  ('teacher', '$2a$10$rksYpyhDhQWYv0hbD.fsNOOhynKOw/4TBFHb/NSgZsotML4DuRKdy', 'T001',     '张老师',     'TEACHER'),
-  ('student', '$2a$10$rksYpyhDhQWYv0hbD.fsNOOhynKOw/4TBFHb/NSgZsotML4DuRKdy', 'S001',     '小明',       'STUDENT');
+  ('admin',   '$2a$10$67tpRc6oA1wOQgzosqeA/e2JvzkVJGASsAGq6RMwJqrEGbvdZhpCq', 'ADMIN001', '系统管理员', 'ADMIN'),
+  ('teacher', '$2a$10$67tpRc6oA1wOQgzosqeA/e2JvzkVJGASsAGq6RMwJqrEGbvdZhpCq', 'T001',     '张老师',     'TEACHER'),
+  ('student', '$2a$10$67tpRc6oA1wOQgzosqeA/e2JvzkVJGASsAGq6RMwJqrEGbvdZhpCq', 'S001',     '小明',       'STUDENT');
 
 -- ==========================================================
 -- 增量迁移：为已有数据库补齐新字段

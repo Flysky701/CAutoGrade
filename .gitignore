@@ -35,6 +35,7 @@ docker/mysql/data/
 docker/redis/data/
 .env
 .env.*
+CONFIG
 
 # OS
 .DS_Store

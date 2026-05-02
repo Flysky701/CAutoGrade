@@ -5,9 +5,17 @@ setlocal enabledelayedexpansion
 cd /d "%~dp0"
 
 echo ========================================
-echo   C AutoGrade - Start Script
+echo   C AutoGrade - Start Services
 echo ========================================
 echo.
+
+if not exist ".env" (
+    echo [ERROR] .env file not found!
+    echo   Please run setup.bat first to configure the system.
+    echo.
+    pause
+    exit /b 1
+)
 
 docker info >nul 2>&1
 if %errorlevel% neq 0 (
@@ -16,18 +24,7 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-echo [1/3] Checking environment variables...
-if "%MYSQL_PASSWORD%"=="" (
-    echo [WARN] MYSQL_PASSWORD not set. Using default.
-)
-if "%JWT_SECRET%"=="" (
-    echo [WARN] JWT_SECRET not set. Please set it before deployment.
-)
-if "%DEEPSEEK_API_KEY%"=="" (
-    echo [WARN] DEEPSEEK_API_KEY not set. LLM grading will be unavailable.
-)
-
-echo [2/3] Starting services...
+echo [1/2] Starting services...
 docker-compose up -d
 if %errorlevel% neq 0 (
     echo [ERROR] Failed to start services. Check docker-compose.yml
@@ -35,24 +32,20 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-echo [3/3] Waiting for services...
-timeout /t 8 /nobreak >nul
+echo [2/2] Waiting for services...
+timeout /t 10 /nobreak >nul
 
 echo.
 echo ========================================
 echo   Services started!
 echo ========================================
 echo.
-echo Access URLs:
 echo   Frontend:  http://localhost
-echo   API Docs:  http://localhost/doc.html
+echo   API Docs:  http://localhost:8080/doc.html
 echo.
-echo Default accounts (please change passwords after first login):
-echo   See deployment documentation for initial credentials.
+echo   Accounts:  admin/teacher/student, password: 123456
 echo.
-echo Useful commands:
-echo   View logs:  docker-compose logs -f
-echo   Stop:       docker-compose down
+echo   Commands:  stop.bat | rebuild.bat | docker-compose logs -f
 echo.
 pause
 endlocal
