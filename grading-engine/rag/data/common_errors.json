@@ -1,0 +1,110 @@
+[
+  {
+    "id": "err_gets",
+    "content": "使用了不安全的gets()函数，该函数无法限制输入长度，极易导致缓冲区溢出。应使用fgets(str, sizeof(str), stdin)替代，注意fgets会保留换行符。",
+    "tags": ["gets", "缓冲区溢出", "安全", "fgets"],
+    "severity": "error"
+  },
+  {
+    "id": "err_scanf_no_ampersand",
+    "content": "scanf读取非指针变量时忘记写&取地址符，正确写法：scanf(\"%d\", &num)。注意：读取字符串时%s不需要&（数组名本身就是地址）。",
+    "tags": ["scanf", "取地址", "&", "输入"],
+    "severity": "error"
+  },
+  {
+    "id": "err_array_bounds",
+    "content": "数组下标越界：循环条件写成 i<=n 而非 i<n，导致访问不存在的数组元素。C语言数组下标范围是[0, n-1]。",
+    "tags": ["数组", "越界", "循环", "下标"],
+    "severity": "error"
+  },
+  {
+    "id": "err_uninit_variable",
+    "content": "使用未初始化的局部变量，其值为不确定的垃圾值，导致程序行为不可预测。所有局部变量在使用前必须显式初始化。",
+    "tags": ["未初始化", "局部变量", "垃圾值"],
+    "severity": "error"
+  },
+  {
+    "id": "err_missing_break",
+    "content": "switch-case语句中忘记写break导致case穿透（fall-through），如果不是刻意为之，这是常见的逻辑错误。",
+    "tags": ["switch", "break", "case穿透"],
+    "severity": "error"
+  },
+  {
+    "id": "err_equals_assign",
+    "content": "在if条件中误将==写成=（赋值运算符），条件永远为真（非0值），导致逻辑判断失效。建议写法：if (5 == num)而非if (num == 5)以提前发现错误。",
+    "tags": ["==", "赋值", "条件判断", "="],
+    "severity": "error"
+  },
+  {
+    "id": "err_memory_leak",
+    "content": "使用malloc/calloc分配的内存没有在合适位置使用free释放，造成内存泄漏。特别注意函数内部提前return和循环中重复分配的场景。",
+    "tags": ["malloc", "free", "内存泄漏", "动态内存"],
+    "severity": "warning"
+  },
+  {
+    "id": "err_dangling_pointer",
+    "content": "释放内存后指针未置为NULL，形成悬空指针（dangling pointer），后续如果误访问会导致未定义行为。建议free(p)后立即p=NULL。",
+    "tags": ["指针", "悬空指针", "free", "NULL"],
+    "severity": "warning"
+  },
+  {
+    "id": "err_off_by_one",
+    "content": "差一错误（Off-by-one）：循环边界多1或少1，常见于数组遍历和字符串处理。仔细检查循环条件中的等号是否必要。",
+    "tags": ["Off-by-one", "循环", "边界", "差一错误"],
+    "severity": "warning"
+  },
+  {
+    "id": "err_integer_division",
+    "content": "整数除法结果仍为整数（舍去小数部分），如 5/2 = 2 而非 2.5。如需浮点结果，应将操作数转换为float/double：5.0/2 或 (float)a/b。",
+    "tags": ["整数除法", "类型转换", "精度", "浮点"],
+    "severity": "warning"
+  },
+  {
+    "id": "err_format_specifier",
+    "content": "printf/scanf格式说明符与参数类型不匹配：%d对应int，%ld对应long，%f对应float（printf）/double（scanf用%lf），%c对应char，%s对应字符串。不匹配可能导致输出错误或运行时崩溃。",
+    "tags": ["printf", "scanf", "格式说明符", "类型匹配"],
+    "severity": "warning"
+  },
+  {
+    "id": "err_missing_return",
+    "content": "有返回值的函数（非void）在某些执行路径下缺少return语句，或者main函数忘记return 0。这会导致函数返回不确定的值。",
+    "tags": ["return", "函数", "返回值", "void"],
+    "severity": "warning"
+  },
+  {
+    "id": "err_infinite_loop",
+    "content": "死循环：循环终止条件永远无法满足，常见原因包括忘记更新循环变量、条件表达式逻辑错误、浮点数精度问题导致相等判断失效。",
+    "tags": ["死循环", "循环条件", "终止", "浮点精度"],
+    "severity": "error"
+  },
+  {
+    "id": "err_string_compare",
+    "content": "使用==直接比较两个字符串（实际是比较指针地址），应使用strcmp()函数：strcmp(s1, s2) == 0表示相等。",
+    "tags": ["字符串比较", "strcmp", "==", "指针"],
+    "severity": "error"
+  },
+  {
+    "id": "err_null_pointer",
+    "content": "未检查malloc/calloc的返回值是否为NULL就直接使用指针，内存分配失败时会返回NULL，解引用NULL指针会导致程序崩溃。",
+    "tags": ["NULL", "malloc", "空指针", "解引用"],
+    "severity": "warning"
+  },
+  {
+    "id": "err_buffer_overflow",
+    "content": "缓冲区溢出：使用strcpy/strcat/sprintf等不检查长度的函数时，目标缓冲区可能不够大。应使用strncpy/strncat/snprintf等带长度限制的版本。",
+    "tags": ["strcpy", "strcat", "sprintf", "缓冲区溢出"],
+    "severity": "error"
+  },
+  {
+    "id": "err_include_missing",
+    "content": "缺少必要的头文件：使用printf需要#include <stdio.h>，使用malloc需要#include <stdlib.h>，使用strlen需要#include <string.h>，使用bool需要#include <stdbool.h>。",
+    "tags": ["include", "头文件", "stdio", "stdlib", "string"],
+    "severity": "error"
+  },
+  {
+    "id": "err_main_signature",
+    "content": "main函数签名错误：标准C的main函数应为int main(void)或int main(int argc, char *argv[])，返回类型为int。",
+    "tags": ["main", "函数签名", "标准"],
+    "severity": "warning"
+  }
+]

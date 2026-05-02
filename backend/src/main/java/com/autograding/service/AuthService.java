@@ -1,0 +1,128 @@
+package com.autograding.service;
+
+import com.autograding.common.BusinessException;
+import com.autograding.dto.auth.AuthResponse;
+import com.autograding.dto.auth.LoginRequest;
+import com.autograding.dto.auth.RegisterRequest;
+import com.autograding.entity.User;
+import com.autograding.mapper.UserMapper;
+import com.autograding.security.JwtTokenProvider;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+
+@Service
+public class AuthService {
+
+    private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
+    private final AuthenticationManager authenticationManager;
+    private final UserDetailsService userDetailsService;
+    private final JwtTokenProvider jwtTokenProvider;
+    private final OperationLogService operationLogService;
+
+    public AuthService(UserMapper userMapper,
+                       PasswordEncoder passwordEncoder,
+                       AuthenticationManager authenticationManager,
+                       UserDetailsService userDetailsService,
+                       JwtTokenProvider jwtTokenProvider,
+                       OperationLogService operationLogService) {
+        this.userMapper = userMapper;
+        this.passwordEncoder = passwordEncoder;
+        this.authenticationManager = authenticationManager;
+        this.userDetailsService = userDetailsService;
+        this.jwtTokenProvider = jwtTokenProvider;
+        this.operationLogService = operationLogService;
+    }
+
+    public AuthResponse register(RegisterRequest request) {
+        User existing = userMapper.selectOne(new LambdaQueryWrapper<User>()
+                .eq(User::getUsername, request.getUsername())
+                .eq(User::getDeleted, 0)
+                .last("limit 1"));
+        if (existing != null) {
+            throw new BusinessException("用户名已存在");
+        }
+
+        if (request.getCode() != null && !request.getCode().isBlank()) {
+            User codeExists = userMapper.selectOne(new LambdaQueryWrapper<User>()
+                    .eq(User::getCode, request.getCode())
+                    .eq(User::getDeleted, 0)
+                    .last("limit 1"));
+            if (codeExists != null) {
+                throw new BusinessException("学号/工号已存在");
+            }
+        }
+
+        User user = new User();
+        user.setUsername(request.getUsername());
+        user.setCode(request.getCode());
+        user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+        user.setNickname(request.getNickname());
+        user.setRole(parseRole(request.getRole()));
+        user.setStatus(1);
+        user.setDeleted(0);
+        user.setCreatedAt(LocalDateTime.now());
+        user.setUpdatedAt(LocalDateTime.now());
+        userMapper.insert(user);
+
+        operationLogService.logOperation(user.getId(), "REGISTER", "USER", user.getId(),
+                "用户注册: " + user.getUsername(), null);
+
+        UserDetails userDetails = userDetailsService.loadUserByUsername(user.getUsername());
+        String token = jwtTokenProvider.generateToken(userDetails);
+
+        return new AuthResponse(token, user.getUsername(), user.getRole().name(), user.getCode());
+    }
+
+    public AuthResponse login(LoginRequest request) {
+        String account = request.getUsername();
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(account, request.getPassword())
+            );
+        } catch (org.springframework.security.core.AuthenticationException e) {
+            throw new BusinessException("用户名或密码错误");
+        }
+
+        UserDetails userDetails = userDetailsService.loadUserByUsername(account);
+        if (userDetails == null) {
+            throw new BusinessException("用户名或密码错误");
+        }
+
+        User user = userMapper.selectOne(new LambdaQueryWrapper<User>()
+                .eq(User::getUsername, userDetails.getUsername())
+                .eq(User::getDeleted, 0)
+                .last("limit 1"));
+        if (user == null) {
+            user = userMapper.selectOne(new LambdaQueryWrapper<User>()
+                    .eq(User::getCode, account)
+                    .eq(User::getDeleted, 0)
+                    .last("limit 1"));
+        }
+        if (user == null) {
+            throw new BusinessException("用户数据异常，请联系管理员");
+        }
+
+        String token = jwtTokenProvider.generateToken(userDetails);
+
+        operationLogService.logOperation(user.getId(), "LOGIN", "USER", user.getId(),
+                "用户登录: " + user.getUsername(), null);
+
+        return new AuthResponse(token, user.getUsername(), user.getRole().name(), user.getCode());
+    }
+
+    private User.Role parseRole(String role) {
+        try {
+            return User.Role.valueOf(role.toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            throw new BusinessException("角色非法，仅支持 STUDENT/TEACHER/ADMIN");
+        }
+    }
+}

@@ -1,0 +1,91 @@
+/* Element Plus theme overrides — academic palette */
+:root {
+  --el-color-primary: var(--primary);
+  --el-color-primary-light-3: var(--primary-light);
+  --el-color-primary-light-5: rgba(30, 58, 95, 0.3);
+  --el-color-primary-light-7: rgba(30, 58, 95, 0.15);
+  --el-color-primary-light-8: rgba(30, 58, 95, 0.08);
+  --el-color-primary-light-9: rgba(30, 58, 95, 0.04);
+  --el-color-primary-dark-2: var(--primary-dark);
+
+  --el-color-success: var(--grade-a);
+  --el-color-success-light-3: var(--success-light);
+  --el-color-warning: var(--grade-c);
+  --el-color-warning-light-3: var(--warning-light);
+  --el-color-danger: var(--grade-f);
+  --el-color-danger-light-3: var(--danger-light);
+  --el-color-info: var(--info);
+
+  --el-border-radius-base: var(--radius-md);
+  --el-font-family: var(--font-family);
+  --el-font-size-base: var(--font-size-base);
+}
+
+/* Header menu hover */
+.el-header .el-menu--horizontal .el-menu-item:hover,
+.el-header .el-button:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Sidebar menu active state */
+.el-aside .el-menu-item.is-active {
+  color: var(--primary) !important;
+  font-weight: 600;
+  background: linear-gradient(90deg, rgba(30, 58, 95, 0.08) 0%, transparent 100%);
+}
+
+/* Card header weight */
+.el-card__header {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Button focus ring */
+.el-button:focus-visible {
+  box-shadow: 0 0 0 2px var(--primary-light) !important;
+}
+
+/* Tag softness */
+.el-tag {
+  font-weight: 500;
+}
+
+/* Dialog header */
+.el-dialog__header {
+  border-bottom: 1px solid var(--border-lighter);
+  padding: var(--space-4) var(--space-5);
+}
+.el-dialog__body {
+  padding: var(--space-5);
+}
+.el-dialog__footer {
+  border-top: 1px solid var(--border-lighter);
+  padding: var(--space-3) var(--space-5);
+}
+
+/* Table header */
+.el-table th.el-table__cell {
+  background: var(--bg-sidebar);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* Statistic value */
+.el-statistic__number {
+  font-weight: 700;
+  font-family: var(--font-display);
+}
+
+/* Input text alignment — ensure left-start */
+.el-input__inner {
+  text-align: left !important;
+}
+
+/* Breadcrumb */
+.el-breadcrumb__inner {
+  font-weight: 500;
+}
+.el-breadcrumb__item:last-child .el-breadcrumb__inner {
+  color: var(--text-primary);
+  font-weight: 600;
+}

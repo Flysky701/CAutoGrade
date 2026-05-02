@@ -1,0 +1,66 @@
+# IDE
+.idea/
+*.iml
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.proj
+*.swp
+*.swo
+
+# Java / Maven
+backend/target/
+*.class
+*.jar
+
+# Node / Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Python
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+grading-engine/venv/
+grading-engine/.venv/
+.pytest_cache/
+
+# Grading engine generated data
+grading-engine/chroma_data/
+
+# Docker volumes & env
+docker/mysql/data/
+docker/redis/data/
+.env
+.env.*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# AI assistant configs
+.claude/
+.codebuddy/
+.trae/
+CLAUDE.md
+.github/copilot-instructions.md
+
+# Logs
+*.log
+logs/
+
+# docs
+Qustions/
+
+# Temporary files
+LLM.md
+build-log.txt
+*output*.txt
+test_results.json
+测试.txt
+
+# Cache
+.cache/
+.gradle/

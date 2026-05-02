@@ -1,0 +1,268 @@
+/* ============================================================
+   Design Token System — auto-grading platform
+   ============================================================ */
+
+:root {
+  /* Brand colors — academic navy palette */
+  --primary: #1e3a5f;
+  --primary-light: #2d5a8e;
+  --primary-dark: #0f2340;
+  --color-accent: #d97706;
+  --color-accent-light: #f59e0b;
+  --success: #059669;
+  --success-light: #a7f3d0;
+  --warning: #d97706;
+  --warning-light: #fde68a;
+  --danger: #dc2626;
+  --danger-light: #fecaca;
+  --info: #6b7280;
+
+  /* Semantic grading colors */
+  --grade-a: #059669;
+  --grade-b: #2563eb;
+  --grade-c: #d97706;
+  --grade-d: #ea580c;
+  --grade-f: #dc2626;
+
+  /* Neutral palette */
+  --text-primary: #1d1e1f;
+  --text-regular: #303133;
+  --text-secondary: #606266;
+  --text-placeholder: #c0c4cc;
+  --text-disabled: #c0c4cc;
+
+  /* Surface / background */
+  --bg-page: #f5f7fa;
+  --bg-card: #ffffff;
+  --bg-header: var(--primary);
+  --bg-sidebar: #f6f7f9;
+  --border-base: #e4e7ed;
+  --border-lighter: #ebeef5;
+
+  /* Typography */
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-display: 'Inter', 'SF Pro Display', 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+  --font-size-xs: 11px;
+  --font-size-sm: 13px;
+  --font-size-base: 14px;
+  --font-size-md: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 24px;
+  --font-size-3xl: 28px;
+  --line-height-base: 1.5;
+  --line-height-heading: 1.3;
+
+  /* Spacing scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* Border radius */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-round: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.10);
+  --shadow-xl: 0 12px 40px rgba(0, 0, 0, 0.14);
+
+  /* Z-index scale */
+  --z-content: 1;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-overlay: 500;
+  --z-modal: 1000;
+  --z-toast: 2000;
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+  --transition-slow: 360ms ease;
+
+  /* Layout */
+  --sidebar-width: 220px;
+  --sidebar-collapsed-width: 60px;
+  --header-height: 56px;
+  --content-max-width: 1280px;
+}
+
+/* ============================================================
+   Reset & Base
+   ============================================================ */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: var(--font-size-base);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
+  color: var(--text-regular);
+  background: var(--bg-page);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: var(--primary);
+  text-decoration: none;
+}
+a:hover {
+  color: var(--primary-light);
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+/* Focus visible outline */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* ============================================================
+   Typography
+   ============================================================ */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-primary);
+  line-height: var(--line-height-heading);
+  font-weight: 600;
+}
+
+h1 { font-size: var(--font-size-3xl); }
+h2 { font-size: var(--font-size-2xl); }
+h3 { font-size: var(--font-size-xl); }
+h4 { font-size: var(--font-size-lg); }
+
+/* ============================================================
+   Utility classes
+   ============================================================ */
+.page-container {
+  padding: var(--space-6);
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-5);
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.page-header h2 {
+  font-size: var(--font-size-xl);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Score display colors */
+.score-high  { color: var(--grade-a); }
+.score-mid   { color: var(--grade-c); }
+.score-low   { color: var(--grade-f); }
+
+/* Grade letter utilities */
+.grade-a { color: var(--grade-a); font-weight: 700; }
+.grade-b { color: var(--grade-b); font-weight: 700; }
+.grade-c { color: var(--grade-c); font-weight: 700; }
+.grade-d { color: var(--grade-d); font-weight: 700; }
+.grade-f { color: var(--grade-f); font-weight: 700; }
+
+/* Code font */
+.code-font { font-family: var(--font-mono); }
+
+/* ============================================================
+   Card styles
+   ============================================================ */
+.card-elevated {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-lighter);
+  transition: box-shadow var(--transition-base);
+}
+.card-elevated:hover {
+  box-shadow: var(--shadow-md);
+}
+
+/* ============================================================
+   Responsive breakpoints
+   ============================================================ */
+
+/* Tablet — stack sidebars */
+@media (max-width: 1024px) {
+  :root {
+    --sidebar-width: 200px;
+  }
+  .page-container {
+    padding: var(--space-4);
+  }
+  .page-header h2 {
+    font-size: var(--font-size-lg);
+  }
+}
+
+/* Mobile — single column */
+@media (max-width: 768px) {
+  :root {
+    --sidebar-width: 0px;
+    --header-height: 48px;
+  }
+  body {
+    font-size: 13px;
+  }
+  .page-container {
+    padding: var(--space-3);
+    max-width: 100%;
+  }
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .page-header h2 {
+    font-size: var(--font-size-md);
+  }
+  h1 { font-size: var(--font-size-2xl); }
+  h2 { font-size: var(--font-size-xl); }
+  h3 { font-size: var(--font-size-lg); }
+}
+
+/* Small mobile */
+@media (max-width: 480px) {
+  .page-container {
+    padding: var(--space-2);
+  }
+}
+
+/* ============================================================
+   Print styles
+   ============================================================ */
+@media print {
+  .page-container { max-width: 100%; }
+  .no-print { display: none !important; }
+}

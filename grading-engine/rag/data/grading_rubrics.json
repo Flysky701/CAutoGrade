@@ -1,0 +1,44 @@
+[
+  {
+    "id": "rubric_correctness",
+    "dimension": "correctness",
+    "content": "正确性评分标准（60分）：程序能正确编译运行，所有测试用例通过得满分；部分测试用例未通过按权重扣分；编译失败或运行时崩溃得0分。边界条件处理正确加分，主要逻辑正确但细节有误酌情扣分。",
+    "tags": ["正确性", "测试用例", "编译", "运行"]
+  },
+  {
+    "id": "rubric_style",
+    "dimension": "style",
+    "content": "代码规范性评分标准（20分）：命名规范（变量名有意义，函数名动词开头）、缩进统一（4空格或1Tab）、注释适当（关键逻辑有注释）、函数长度合理（单个函数不超过50行）、无魔法数字（常量使用#define或const）、文件结构清晰（include集中、函数声明在前）。",
+    "tags": ["规范性", "命名", "缩进", "注释", "代码风格"]
+  },
+  {
+    "id": "rubric_efficiency",
+    "dimension": "efficiency",
+    "content": "代码效率评分标准（20分）：时间复杂度合理（O(n²)以下为佳）、空间复杂度合理（避免不必要的内存分配）、无冗余计算（循环不变量外提）、使用合适的数据结构、算法选择合理（如使用快速排序而非冒泡排序）。",
+    "tags": ["效率", "时间复杂度", "空间复杂度", "算法", "数据结构"]
+  },
+  {
+    "id": "rubric_io",
+    "dimension": "correctness",
+    "content": "输入输出规范：使用scanf读取输入时检查返回值，printf输出格式严格按题目要求（注意空格、换行），浮点数保留指定小数位，输入提示信息与题目一致。",
+    "tags": ["输入输出", "scanf", "printf", "格式"]
+  },
+  {
+    "id": "rubric_memory",
+    "dimension": "efficiency",
+    "content": "内存管理标准：动态分配的内存必须在合适位置释放（malloc/calloc/realloc配对free），避免内存泄漏，避免野指针（释放后置为NULL），避免重复分配。",
+    "tags": ["内存管理", "malloc", "free", "指针"]
+  },
+  {
+    "id": "rubric_boundary",
+    "dimension": "correctness",
+    "content": "边界条件检查：数组下标不越界，循环边界正确（特别注意等号），空输入处理，极大/极小值处理，整数溢出检查。",
+    "tags": ["边界条件", "数组", "循环", "溢出"]
+  },
+  {
+    "id": "rubric_safety",
+    "dimension": "style",
+    "content": "安全编程检查：不使用gets（用fgets替代），scanf使用宽度限定符防止缓冲区溢出，字符串操作使用安全版本（strncpy/strncat），避免sprintf未检查缓冲区大小。",
+    "tags": ["安全", "gets", "scanf", "缓冲区溢出", "strcpy"]
+  }
+]

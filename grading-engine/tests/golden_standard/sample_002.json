@@ -1,0 +1,17 @@
+{
+  "submission_id": 2,
+  "problem_title": "判断奇偶数",
+  "problem_description": "编写程序，读取一个整数，判断它是奇数还是偶数。如果是偶数输出\"even\"，奇数输出\"odd\"。",
+  "code": "#include <stdio.h>\n\nint main() {\n    int n;\n    scanf(\"%d\", &n);\n    if (n % 2 == 0) {\n        printf(\"even\\n\");\n    } else {\n        printf(\"odd\\n\");\n    }\n    return 0;\n}",
+  "golden_score": 90,
+  "golden_correctness_score": 55,
+  "golden_style_score": 17,
+  "golden_efficiency_score": 18,
+  "threshold": 15,
+  "annotations": [
+    {"line": 1, "severity": "info", "message": "正确包含头文件"},
+    {"line": 6, "severity": "info", "message": "正确使用模运算符判断奇偶"},
+    {"line": 6, "severity": "info", "message": "注意等号运算符，区分==与="}
+  ],
+  "tags": ["分支", "运算符", "条件判断"]
+}

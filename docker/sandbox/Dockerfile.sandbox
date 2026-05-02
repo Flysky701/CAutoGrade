@@ -1,0 +1,17 @@
+FROM gcc:latest
+
+# Install time utility and security tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    time \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create unprivileged user for sandbox execution
+RUN useradd -m -s /bin/sh sandbox_user
+
+# Set working directory
+WORKDIR /sandbox
+
+# Default to unprivileged user
+USER sandbox_user
+
+CMD ["/bin/sh"]
