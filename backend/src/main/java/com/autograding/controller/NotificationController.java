@@ -10,10 +10,12 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/notifications")
@@ -43,6 +45,20 @@ public class NotificationController {
     public Result<Integer> getUnreadCount() {
         Long userId = SecurityUtils.getCurrentUserId();
         return Result.success(notificationService.getUnreadCount(userId));
+    }
+
+    @PostMapping
+    public Result<Notification> createNotification(@RequestBody Map<String, Object> body) {
+        Long userId = Long.valueOf(body.get("userId").toString());
+        String title = (String) body.get("title");
+        String content = (String) body.get("content");
+        String typeStr = (String) body.get("type");
+        Notification.Type type = Notification.Type.valueOf(typeStr);
+        Long relatedId = body.get("relatedId") != null
+                ? Long.valueOf(body.get("relatedId").toString()) : null;
+        Notification notification = notificationService.createNotification(
+                userId, title, content, type, relatedId);
+        return Result.success(notification);
     }
 
     @PostMapping("/{id}/read")

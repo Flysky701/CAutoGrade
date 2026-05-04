@@ -86,17 +86,30 @@ const props = defineProps<{ data: Record<string, any> }>()
 
 const n = computed(() => {
   const d = props.data || {}
+  const fb = typeof d.feedbackJson === 'string'
+    ? (() => { try { return JSON.parse(d.feedbackJson) } catch { return {} } })()
+    : (d.feedbackJson || {})
   return {
     totalScore:       d.totalScore ?? d.total_score ?? 0,
     correctnessScore: d.correctnessScore ?? d.correctness_score ?? 0,
     styleScore:       d.styleScore ?? d.style_score ?? 0,
     efficiencyScore:  d.efficiencyScore ?? d.efficiency_score ?? 0,
     summary:          typeof d.summary === 'string' ? d.summary
-                      : (typeof d.feedbackJson === 'string' ? (() => { try { const p = JSON.parse(d.feedbackJson); return p?.summary || d.feedbackJson } catch { return d.feedbackJson } })()
-                      : (d.feedbackJson?.summary || '')),
-    lineAnnotations:  d.lineAnnotations ?? d.line_annotations ?? [],
-    improvements:     d.improvements ?? [],
-    testCaseResults:  d.testCaseResults ?? d.test_case_results ?? [],
+                      : (fb?.summary || ''),
+    lineAnnotations:  d.lineAnnotations ?? d.line_annotations ?? fb?.line_annotations ?? [],
+    improvements:     d.improvements ?? fb?.improvements ?? [],
+    testCaseResults:  (() => {
+      if (d.testCaseResults) return d.testCaseResults
+      if (d.test_case_results) return d.test_case_results
+      const raw = d.testCaseResult ?? d.test_case_result
+      if (raw) {
+        if (typeof raw === 'string') {
+          try { return JSON.parse(raw) } catch { /* fall through */ }
+        }
+        if (Array.isArray(raw)) return raw
+      }
+      return fb?.test_case_results ?? []
+    })(),
   }
 })
 
