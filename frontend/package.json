@@ -11,10 +11,12 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@element-plus/icons-vue": "^2.3.2",
     "@monaco-editor/loader": "^1.4.0",
     "axios": "^1.4.0",
     "echarts": "^5.4.3",
     "element-plus": "^2.3.8",
+    "marked": "^15.0.12",
     "monaco-editor": "^0.43.0",
     "pinia": "^2.1.6",
     "vue": "^3.3.4",
